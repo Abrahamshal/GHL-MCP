@@ -1,0 +1,12 @@
+/**
+ * Entry point — mounts the MCP UI Kit React app.
+ */
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { App } from "./App.js";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);

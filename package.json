@@ -12,6 +12,7 @@
     "scripts/",
     "docs/",
     "examples/",
+    "mcp-apps/",
     "README.md",
     "package.json",
     ".env.example"
@@ -44,7 +45,12 @@
     "tools:report": "node scripts/ghl-mcp.mjs report",
     "tools:explorer": "node scripts/ghl-mcp.mjs explorer",
     "tools:configure": "node scripts/ghl-mcp.mjs configure claude",
-    "tools:update-api": "node scripts/ghl-mcp.mjs update-api"
+    "tools:update-api": "node scripts/ghl-mcp.mjs update-api",
+    "apps:install": "npm install --prefix mcp-apps",
+    "apps:build": "npm run build --prefix mcp-apps",
+    "apps:typecheck": "npm run typecheck --prefix mcp-apps",
+    "apps:start:stdio": "npm run start:stdio --prefix mcp-apps",
+    "apps:start:http": "npm run start:http --prefix mcp-apps"
   },
   "keywords": [
     "mcp",

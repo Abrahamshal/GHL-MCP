@@ -53,6 +53,29 @@ The `examples/` directory turns the tool surface into practical MCP workflows:
 
 Recipes use real MCP tool names and include confirmation points for actions like outbound messages, appointment creation, workflow enrollment, deletes, and snapshot pushes.
 
+## MCP Apps
+
+`mcp-apps/` contains companion MCP Apps for hosts that support interactive MCP resources. They run as a separate app server so the core MCP API server stays lean.
+
+MCP Apps require Node 20+ because they use `@modelcontextprotocol/ext-apps`.
+
+```bash
+npm run build
+npm run apps:install
+npm run apps:build
+npm run apps:start:stdio
+```
+
+Included app tools:
+
+- `show_ghl_tool_explorer_app`
+- `show_ghl_contact_360_app`
+- `show_ghl_pipeline_command_app`
+- `show_ghl_ads_reporting_app`
+- `show_ghl_agency_health_app`
+
+See `mcp-apps/README.md` for host config and HTTP mode.
+
 ## Transports
 
 - `npm run start:stdio` — stdio MCP server for desktop MCP clients.
@@ -154,6 +177,7 @@ src/
 scripts/         API scanner, generator, build, smoke test
 docs/            generated API coverage reports
 examples/        MCP recipes and starter agent templates
+mcp-apps/        companion MCP Apps server and bundled UI
 tests/           Jest tests
 ```
 

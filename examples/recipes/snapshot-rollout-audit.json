@@ -1,0 +1,58 @@
+{
+  "id": "snapshot-rollout-audit",
+  "title": "Snapshot rollout audit",
+  "goal": "Inspect available snapshots and push status before rolling a snapshot to subaccounts.",
+  "requiredInputs": ["companyId", "snapshotId", "targetLocationIds"],
+  "optionalInputs": ["sourceLocationId", "shareLinkName"],
+  "steps": [
+    {
+      "id": "list-snapshots",
+      "description": "List snapshots and confirm the requested snapshot exists.",
+      "tool": "get_snapshots",
+      "input": {
+        "companyId": "{{companyId}}"
+      }
+    },
+    {
+      "id": "get-snapshot",
+      "description": "Inspect snapshot details before rollout.",
+      "tool": "get_snapshot",
+      "input": {
+        "companyId": "{{companyId}}",
+        "snapshotId": "{{snapshotId}}"
+      }
+    },
+    {
+      "id": "get-latest-push",
+      "description": "Check the latest push status to avoid overlapping rollouts.",
+      "tool": "get_latest_snapshot_push",
+      "input": {
+        "companyId": "{{companyId}}",
+        "snapshotId": "{{snapshotId}}",
+        "locationId": "{{targetLocationId}}"
+      }
+    },
+    {
+      "id": "push-snapshot",
+      "description": "Push the snapshot to approved target subaccounts.",
+      "tool": "push_snapshot_to_subaccounts",
+      "input": {
+        "companyId": "{{companyId}}",
+        "snapshotId": "{{snapshotId}}",
+        "locationIds": "{{targetLocationIds}}"
+      }
+    },
+    {
+      "id": "check-push-status",
+      "description": "Poll the resulting push status for failures.",
+      "tool": "get_snapshot_push_status",
+      "input": {
+        "companyId": "{{companyId}}",
+        "snapshotId": "{{snapshotId}}",
+        "pushId": "{{pushId}}"
+      }
+    }
+  ],
+  "confirmationPoints": ["Before pushing a snapshot", "Before pushing to production client subaccounts"],
+  "output": "Return target locations, push ID, completed locations, failed locations, and follow-up actions."
+}

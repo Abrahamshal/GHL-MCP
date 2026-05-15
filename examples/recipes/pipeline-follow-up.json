@@ -1,0 +1,51 @@
+{
+  "id": "pipeline-follow-up",
+  "title": "Pipeline follow-up",
+  "goal": "Find open opportunities that need attention and create contact tasks for the next action.",
+  "requiredInputs": ["pipelineId"],
+  "optionalInputs": ["pipelineStageId", "assignedTo", "limit", "dueDate", "minimumValue"],
+  "steps": [
+    {
+      "id": "list-pipelines",
+      "description": "Confirm the available pipelines and stage IDs.",
+      "tool": "get_pipelines",
+      "input": {}
+    },
+    {
+      "id": "search-open-opportunities",
+      "description": "Pull open opportunities for the requested pipeline or stage.",
+      "tool": "search_opportunities",
+      "input": {
+        "pipelineId": "{{pipelineId}}",
+        "pipelineStageId": "{{pipelineStageId}}",
+        "assignedTo": "{{assignedTo}}",
+        "status": "open",
+        "limit": "{{limit}}"
+      }
+    },
+    {
+      "id": "create-next-action-task",
+      "description": "Create a follow-up task for each selected opportunity contact.",
+      "tool": "create_contact_task",
+      "input": {
+        "contactId": "{{opportunity.contactId}}",
+        "title": "Follow up on open opportunity",
+        "body": "Opportunity: {{opportunity.name}}. Value: {{opportunity.monetaryValue}}. Confirm next step and decision date.",
+        "dueDate": "{{dueDate}}",
+        "assignedTo": "{{opportunity.assignedTo}}",
+        "completed": false
+      }
+    },
+    {
+      "id": "add-follow-up-tag",
+      "description": "Tag selected contacts so the CRM can filter follow-up work.",
+      "tool": "add_contact_tags",
+      "input": {
+        "contactId": "{{opportunity.contactId}}",
+        "tags": ["pipeline-follow-up"]
+      }
+    }
+  ],
+  "confirmationPoints": ["Before creating tasks in bulk", "Before tagging more than 25 contacts"],
+  "output": "Return the opportunities reviewed, skipped reasons, and created task IDs."
+}

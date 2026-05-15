@@ -1,0 +1,53 @@
+{
+  "id": "form-submission-triage",
+  "title": "Form submission triage",
+  "goal": "Review recent form submissions, identify uncontacted leads, and create follow-up tasks.",
+  "requiredInputs": ["locationId", "startDate", "endDate"],
+  "optionalInputs": ["formId", "assignedTo", "dueDate"],
+  "steps": [
+    {
+      "id": "list-forms",
+      "description": "List forms so the user can choose a form ID when one is not provided.",
+      "tool": "get_forms",
+      "input": {
+        "locationId": "{{locationId}}"
+      }
+    },
+    {
+      "id": "get-form-submissions",
+      "description": "Fetch submissions for the selected form and date range.",
+      "tool": "get_form_submissions",
+      "input": {
+        "locationId": "{{locationId}}",
+        "formId": "{{formId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    },
+    {
+      "id": "find-uncontacted-form-leads",
+      "description": "Use the insight helper to identify form leads without follow-up.",
+      "tool": "find_uncontacted_form_leads",
+      "input": {
+        "locationId": "{{locationId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    },
+    {
+      "id": "create-follow-up-task",
+      "description": "Create a task for each approved uncontacted lead.",
+      "tool": "create_contact_task",
+      "input": {
+        "contactId": "{{contactId}}",
+        "title": "Follow up on form submission",
+        "body": "Review form submission and respond with the appropriate next step.",
+        "dueDate": "{{dueDate}}",
+        "assignedTo": "{{assignedTo}}",
+        "completed": false
+      }
+    }
+  ],
+  "confirmationPoints": ["Before creating tasks in bulk"],
+  "output": "Return submissions reviewed, uncontacted leads found, and tasks created."
+}

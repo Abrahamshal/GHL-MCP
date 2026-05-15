@@ -33,7 +33,7 @@ export function registerExecuteRoutes(
 ): void {
   app.get('/tools', (_req, res) => {
     try {
-      const anthropicTools = defaultRegistry.getAllToolDefinitions([]).map(toAnthropicTool);
+      const anthropicTools = defaultRegistry.getAllToolDefinitions().map(toAnthropicTool);
       res.json({ tools: anthropicTools, count: anthropicTools.length });
     } catch (err: any) {
       console.error('[execute-route] GET /tools error:', err.message);

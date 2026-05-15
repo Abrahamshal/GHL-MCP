@@ -1,0 +1,65 @@
+{
+  "id": "weekly-ads-report",
+  "title": "Weekly ads report",
+  "goal": "Collect ad, attribution, funnel, conversion, and pipeline data for an MCP-generated weekly performance summary.",
+  "requiredInputs": ["locationId", "startDate", "endDate"],
+  "optionalInputs": ["platform", "funnelId", "pipelineId", "userId"],
+  "steps": [
+    {
+      "id": "get-ads",
+      "description": "Pull ad performance for the reporting window.",
+      "tool": "get_ad_reports",
+      "input": {
+        "locationId": "{{locationId}}",
+        "platform": "{{platform}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    },
+    {
+      "id": "get-attribution",
+      "description": "Pull source attribution for leads and conversions.",
+      "tool": "get_attribution_report",
+      "input": {
+        "locationId": "{{locationId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    },
+    {
+      "id": "get-funnels",
+      "description": "Pull funnel views and conversion data.",
+      "tool": "get_funnel_reports",
+      "input": {
+        "locationId": "{{locationId}}",
+        "funnelId": "{{funnelId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    },
+    {
+      "id": "get-conversions",
+      "description": "Pull conversion totals for the same period.",
+      "tool": "get_conversion_reports",
+      "input": {
+        "locationId": "{{locationId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    },
+    {
+      "id": "get-pipeline-impact",
+      "description": "Connect media performance to pipeline impact when a pipeline is provided.",
+      "tool": "get_pipeline_reports",
+      "input": {
+        "locationId": "{{locationId}}",
+        "pipelineId": "{{pipelineId}}",
+        "userId": "{{userId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    }
+  ],
+  "confirmationPoints": ["Before emailing or posting the report to clients"],
+  "output": "Return a concise report with spend, leads, conversion rate, pipeline value, notable changes, and data gaps."
+}

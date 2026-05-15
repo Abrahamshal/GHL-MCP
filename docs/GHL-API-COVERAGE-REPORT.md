@@ -1,6 +1,6 @@
 # GHL API Coverage Report
 
-Generated: 2026-05-15T17:01:25.251Z
+Generated from official GHL docs commit: 192cd68
 
 ## Source Snapshot
 

@@ -52,7 +52,7 @@ class GHLMCPServer {
   }
 
   private setupHandlers(): void {
-    const allTools = this.registry.getAllToolDefinitions([]);
+    const allTools = this.registry.getAllToolDefinitions();
 
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       process.stderr.write(`[GHL MCP] Listing ${allTools.length} tools\n`);

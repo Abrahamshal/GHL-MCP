@@ -1,0 +1,61 @@
+{
+  "id": "book-appointment-from-lead",
+  "title": "Book appointment from lead",
+  "goal": "Find a lead, show available calendar slots, and create an appointment after confirmation.",
+  "requiredInputs": ["contactQuery", "calendarId", "startDate", "endDate"],
+  "optionalInputs": ["timezone", "slotDuration", "selectedStartTime", "selectedEndTime", "appointmentTitle"],
+  "steps": [
+    {
+      "id": "find-contact",
+      "description": "Resolve the lead by name, phone, or email.",
+      "tool": "search_contacts",
+      "input": {
+        "query": "{{contactQuery}}",
+        "limit": 10
+      }
+    },
+    {
+      "id": "get-calendar",
+      "description": "Verify the target calendar exists and inspect its booking settings.",
+      "tool": "get_calendar",
+      "input": {
+        "calendarId": "{{calendarId}}"
+      }
+    },
+    {
+      "id": "get-free-slots",
+      "description": "Fetch available slots for the requested window.",
+      "tool": "get_free_slots",
+      "input": {
+        "calendarId": "{{calendarId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}",
+        "timezone": "{{timezone}}"
+      }
+    },
+    {
+      "id": "create-appointment",
+      "description": "Create the appointment only after the user chooses a slot.",
+      "tool": "create_appointment",
+      "input": {
+        "calendarId": "{{calendarId}}",
+        "contactId": "{{contactId}}",
+        "title": "{{appointmentTitle}}",
+        "startTime": "{{selectedStartTime}}",
+        "endTime": "{{selectedEndTime}}",
+        "timezone": "{{timezone}}"
+      }
+    },
+    {
+      "id": "tag-booked-lead",
+      "description": "Tag the contact as booked for downstream automation/reporting.",
+      "tool": "add_contact_tags",
+      "input": {
+        "contactId": "{{contactId}}",
+        "tags": ["appointment-booked"]
+      }
+    }
+  ],
+  "confirmationPoints": ["Before creating the appointment", "Before sending any outbound SMS or email reminders"],
+  "output": "Return the appointment ID, booked time, calendar name, and contact summary."
+}

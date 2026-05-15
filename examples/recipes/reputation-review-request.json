@@ -1,0 +1,60 @@
+{
+  "id": "reputation-review-request",
+  "title": "Reputation review request",
+  "goal": "Send review requests to selected happy customers and summarize reputation activity.",
+  "requiredInputs": ["locationId", "contactIds"],
+  "optionalInputs": ["startDate", "endDate", "platform", "deliveryMethod", "messageTemplate"],
+  "steps": [
+    {
+      "id": "get-review-links",
+      "description": "Verify the location has review links configured.",
+      "tool": "get_review_links",
+      "input": {
+        "locationId": "{{locationId}}"
+      }
+    },
+    {
+      "id": "get-review-stats",
+      "description": "Check recent review volume and rating trend.",
+      "tool": "get_review_stats",
+      "input": {
+        "locationId": "{{locationId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    },
+    {
+      "id": "send-review-request",
+      "description": "Send the review request to each approved contact.",
+      "tool": "send_review_request",
+      "input": {
+        "locationId": "{{locationId}}",
+        "contactId": "{{contactId}}",
+        "platform": "{{platform}}",
+        "method": "{{deliveryMethod}}",
+        "message": "{{messageTemplate}}"
+      }
+    },
+    {
+      "id": "tag-requested-contact",
+      "description": "Tag requested contacts for suppression and reporting.",
+      "tool": "add_contact_tags",
+      "input": {
+        "contactId": "{{contactId}}",
+        "tags": ["review-requested"]
+      }
+    },
+    {
+      "id": "get-review-requests",
+      "description": "Summarize recent review request activity.",
+      "tool": "get_review_requests",
+      "input": {
+        "locationId": "{{locationId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    }
+  ],
+  "confirmationPoints": ["Before sending review requests", "Before sending to more than 20 contacts"],
+  "output": "Return request count, contacts tagged, recent rating trend, and missing configuration."
+}

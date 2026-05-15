@@ -1,0 +1,68 @@
+{
+  "id": "agency-location-health-check",
+  "title": "Agency location health check",
+  "goal": "Gather key operational signals for one location and summarize what needs attention.",
+  "requiredInputs": ["locationId", "startDate", "endDate"],
+  "optionalInputs": ["pipelineId", "calendarId", "userId"],
+  "steps": [
+    {
+      "id": "get-location",
+      "description": "Verify the location and basic account details.",
+      "tool": "get_location",
+      "input": {
+        "locationId": "{{locationId}}"
+      }
+    },
+    {
+      "id": "get-users",
+      "description": "List users to check assignments and inactive owners.",
+      "tool": "get_users",
+      "input": {
+        "locationId": "{{locationId}}"
+      }
+    },
+    {
+      "id": "get-dashboard-stats",
+      "description": "Pull dashboard-level performance for the health check window.",
+      "tool": "get_dashboard_stats",
+      "input": {
+        "locationId": "{{locationId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    },
+    {
+      "id": "get-pipeline-report",
+      "description": "Pull pipeline performance when a pipeline is configured.",
+      "tool": "get_pipeline_reports",
+      "input": {
+        "locationId": "{{locationId}}",
+        "pipelineId": "{{pipelineId}}",
+        "userId": "{{userId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    },
+    {
+      "id": "get-appointment-report",
+      "description": "Pull appointment performance and no-show/cancellation patterns.",
+      "tool": "get_appointment_reports",
+      "input": {
+        "locationId": "{{locationId}}",
+        "calendarId": "{{calendarId}}",
+        "startDate": "{{startDate}}",
+        "endDate": "{{endDate}}"
+      }
+    },
+    {
+      "id": "audit-ads-setup",
+      "description": "Check whether ads reporting appears connected and usable.",
+      "tool": "audit_location_ads_setup",
+      "input": {
+        "locationId": "{{locationId}}"
+      }
+    }
+  ],
+  "confirmationPoints": ["Before changing users, workflows, calendars, or integrations based on the audit"],
+  "output": "Return a health summary with blockers, warning items, clean items, and recommended next tool calls."
+}

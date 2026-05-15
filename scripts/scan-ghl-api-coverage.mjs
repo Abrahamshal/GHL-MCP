@@ -298,7 +298,6 @@ function safeGit(args, cwd) {
 }
 
 function buildReport({ official, local, comparison, changelogFindings, docsDir }) {
-  const now = new Date().toISOString();
   const highPriorityApps = new Set(['users', 'emails', 'campaigns', 'contacts', 'calendars', 'marketplace']);
   const missingHighPriority = comparison.missingOfficial
     .filter((endpoint) => highPriorityApps.has(endpoint.app))
@@ -314,7 +313,7 @@ function buildReport({ official, local, comparison, changelogFindings, docsDir }
 
   return `# GHL API Coverage Report
 
-Generated: ${now}
+Generated from official GHL docs commit: ${official.tag}
 
 ## Source Snapshot
 

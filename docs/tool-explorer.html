@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GoHighLevel MCP Tool Explorer</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f7f7f4;
+      color: #161616;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      border-bottom: 1px solid #d8d8d2;
+      padding-bottom: 18px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.15;
+    }
+    .summary {
+      color: #5f625d;
+      margin: 8px 0 0;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 190px 150px;
+      gap: 10px;
+      margin: 22px 0;
+    }
+    input, select {
+      border: 1px solid #c9cbc4;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font: inherit;
+      background: #fff;
+      color: inherit;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid #d8d8d2;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid #ecece7;
+      vertical-align: top;
+      font-size: 14px;
+    }
+    th {
+      background: #efefea;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #555952;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+    .pill {
+      display: inline-block;
+      border: 1px solid #cfd2ca;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      background: #f6f6f2;
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+    .danger {
+      border-color: #d19890;
+      color: #8a241a;
+      background: #fff1ef;
+    }
+    .empty {
+      padding: 26px;
+      color: #666a62;
+      border: 1px dashed #c9cbc4;
+      background: #fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { background: #151613; color: #efefe8; }
+      header { border-color: #383a33; }
+      .summary { color: #adb1a6; }
+      input, select, table { background: #1e201b; border-color: #3a3d35; }
+      th { background: #292b25; color: #c7cabf; }
+      td, th { border-color: #31342d; }
+      .pill { background: #292b25; border-color: #45483f; }
+      .danger { background: #3a211e; color: #ffb4aa; border-color: #81443d; }
+      .empty { background: #1e201b; border-color: #45483f; color: #c7cabf; }
+    }
+    @media (max-width: 760px) {
+      main { padding: 18px; }
+      header { display: block; }
+      .controls { grid-template-columns: 1fr; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>GoHighLevel MCP Tool Explorer</h1>
+        <p class="summary" id="summary">Loading tool inventory...</p>
+      </div>
+      <input id="file" type="file" accept="application/json" title="Load docs/tool-inventory.json">
+    </header>
+
+    <section class="controls">
+      <input id="search" type="search" placeholder="Search tools, descriptions, paths, scopes">
+      <select id="category"></select>
+      <select id="access">
+        <option value="">All access</option>
+        <option value="read">Read</option>
+        <option value="write">Write</option>
+        <option value="delete">Delete</option>
+      </select>
+    </section>
+
+    <section id="content" class="empty">If the inventory does not load automatically, choose <code>docs/tool-inventory.json</code> with the file picker.</section>
+  </main>
+
+  <script>
+    const state = { tools: [] };
+    const els = {
+      file: document.getElementById('file'),
+      search: document.getElementById('search'),
+      category: document.getElementById('category'),
+      access: document.getElementById('access'),
+      content: document.getElementById('content'),
+      summary: document.getElementById('summary'),
+    };
+
+    els.file.addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      loadInventory(JSON.parse(await file.text()));
+    });
+    els.search.addEventListener('input', render);
+    els.category.addEventListener('change', render);
+    els.access.addEventListener('change', render);
+
+    fetch('tool-inventory.json')
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('not found')))
+      .then(loadInventory)
+      .catch(() => {});
+
+    function loadInventory(data) {
+      state.tools = Array.isArray(data.tools) ? data.tools : [];
+      const categories = [...new Set(state.tools.map((tool) => tool.category).filter(Boolean))].sort();
+      els.category.innerHTML = '<option value="">All categories</option>' + categories.map((category) => `<option>${escapeHtml(category)}</option>`).join('');
+      render();
+    }
+
+    function render() {
+      const query = els.search.value.trim().toLowerCase();
+      const category = els.category.value;
+      const access = els.access.value;
+      const tools = state.tools.filter((tool) => {
+        const haystack = [tool.name, tool.description, tool.category, tool.module, tool.path, tool.operationId, ...(tool.scopes || [])].join(' ').toLowerCase();
+        if (query && !haystack.includes(query)) return false;
+        if (category && tool.category !== category) return false;
+        if (access && tool.access !== access) return false;
+        return true;
+      });
+
+      els.summary.textContent = state.tools.length
+        ? `${tools.length} of ${state.tools.length} tools shown`
+        : 'Load docs/tool-inventory.json to inspect tools.';
+
+      if (!tools.length) {
+        els.content.className = 'empty';
+        els.content.textContent = state.tools.length ? 'No matching tools.' : 'If the inventory does not load automatically, choose docs/tool-inventory.json with the file picker.';
+        return;
+      }
+
+      els.content.className = '';
+      els.content.innerHTML = `<table>
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Category</th>
+            <th>Access</th>
+            <th>Endpoint</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tools.map(renderTool).join('')}
+        </tbody>
+      </table>`;
+    }
+
+    function renderTool(tool) {
+      const endpoint = tool.method && tool.path ? `${tool.method} ${tool.path}` : tool.source;
+      const accessClass = tool.destructive ? 'pill danger' : 'pill';
+      return `<tr>
+        <td><code>${escapeHtml(tool.name)}</code></td>
+        <td>${escapeHtml(tool.category || tool.module || '')}</td>
+        <td><span class="${accessClass}">${escapeHtml(tool.access || '')}</span></td>
+        <td><code>${escapeHtml(endpoint || '')}</code></td>
+        <td>${escapeHtml(tool.description || '')}</td>
+      </tr>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      }[char]));
+    }
+  </script>
+</body>
+</html>

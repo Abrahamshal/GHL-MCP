@@ -145,7 +145,7 @@ async function main() {
         mcp: '/mcp',
         sse: '/sse',
       },
-      tools: registry.getToolCounts(0),
+      tools: registry.getToolCounts(),
       cache: ghlClient.getCacheStats(),
     });
   });
@@ -177,6 +177,14 @@ async function main() {
   });
 
   registerExecuteRoutes(app, registry, config);
+
+  app.get('/tool-inventory', (_req, res) => {
+    res.json({
+      tools: registry.getToolInventory(),
+      count: registry.getToolCount(),
+      generatedAt: new Date().toISOString(),
+    });
+  });
 
   app.post('/tools/call', async (req, res) => {
     const { name, arguments: args } = req.body;

@@ -69,6 +69,23 @@ interface ToolModule {
   executeTool: (name: string, args: Record<string, unknown>) => Promise<unknown>;
 }
 
+export interface ToolInventoryItem {
+  name: string;
+  module: string;
+  description: string;
+  category: string;
+  access: string;
+  destructive: boolean;
+  readOnly: boolean;
+  idempotent: boolean;
+  required: string[];
+  scopes: string[];
+  source: string;
+  method?: string;
+  path?: string;
+  operationId?: string;
+}
+
 // ─── Annotation Inference ───────────────────────────────────
 
 /**
@@ -124,6 +141,32 @@ function inferAnnotations(toolName: string, meta?: any): ToolAnnotations {
     destructiveHint: isDestructive,
     idempotentHint: isIdempotent,
     openWorldHint: true, // All tools interact with GHL API
+  };
+}
+
+function inferToolInventoryItem(tool: Tool, moduleName: string): ToolInventoryItem {
+  const meta = (tool as any)._meta || {};
+  const labels = meta.labels || {};
+  const official = meta.official || {};
+  const annotations = inferAnnotations(tool.name, meta);
+  const schema = (tool as any).inputSchema || {};
+  const required = Array.isArray(schema.required) ? schema.required.map(String) : [];
+
+  return {
+    name: tool.name,
+    module: moduleName,
+    description: tool.description || '',
+    category: labels.category || moduleName,
+    access: annotations.destructiveHint ? 'delete' : annotations.readOnlyHint ? 'read' : labels.access || 'write',
+    destructive: Boolean(annotations.destructiveHint),
+    readOnly: Boolean(annotations.readOnlyHint),
+    idempotent: Boolean(annotations.idempotentHint),
+    required,
+    scopes: Array.isArray(official.scopes) ? official.scopes : [],
+    source: labels.source || (official.operationId ? 'official-ghl-openapi' : 'local-tool-module'),
+    method: official.method,
+    path: official.path,
+    operationId: official.operationId,
   };
 }
 
@@ -332,7 +375,7 @@ export class ToolRegistry {
   /**
    * Get tool counts by category (for REST /)
    */
-  getToolCounts(appToolCount: number): Record<string, number | Record<string, number>> {
+  getToolCounts(): Record<string, number | Record<string, number>> {
     const counts: Record<string, number> = {};
     for (const mod of this.modules) {
       try {
@@ -341,7 +384,6 @@ export class ToolRegistry {
         counts[mod.name] = 0;
       }
     }
-    counts['apps'] = appToolCount;
 
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
     return {
@@ -354,15 +396,22 @@ export class ToolRegistry {
   /**
    * Get all tool definitions (for REST /tools endpoint)
    */
-  getAllToolDefinitions(appTools: Tool[]): Tool[] {
+  getAllToolDefinitions(): Tool[] {
     // Add annotations to existing tool defs for the REST endpoint
-    return [...this.allToolDefs, ...appTools].map(tool => {
+    return this.allToolDefs.map(tool => {
       const meta = (tool as any)._meta;
       const annotations = inferAnnotations(tool.name, meta);
       return {
         ...tool,
         annotations,
       };
+    });
+  }
+
+  getToolInventory(): ToolInventoryItem[] {
+    return this.allToolDefs.map((tool) => {
+      const mod = this.toolToModule.get(tool.name);
+      return inferToolInventoryItem(tool, mod?.name || 'unknown');
     });
   }
 

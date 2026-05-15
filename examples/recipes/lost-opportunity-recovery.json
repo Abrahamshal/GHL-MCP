@@ -1,0 +1,48 @@
+{
+  "id": "lost-opportunity-recovery",
+  "title": "Lost opportunity recovery",
+  "goal": "Find lost opportunities and enroll approved contacts into a recovery workflow.",
+  "requiredInputs": ["pipelineId", "workflowId"],
+  "optionalInputs": ["assignedTo", "limit", "lostReasonTag", "reviewWindow"],
+  "steps": [
+    {
+      "id": "find-lost-opportunities",
+      "description": "Search lost deals in the target pipeline.",
+      "tool": "search_opportunities",
+      "input": {
+        "pipelineId": "{{pipelineId}}",
+        "assignedTo": "{{assignedTo}}",
+        "status": "lost",
+        "limit": "{{limit}}"
+      }
+    },
+    {
+      "id": "inspect-contact",
+      "description": "Inspect each contact before enrollment to avoid bad-fit or do-not-contact records.",
+      "tool": "get_contact",
+      "input": {
+        "contactId": "{{opportunity.contactId}}"
+      }
+    },
+    {
+      "id": "tag-recovery-candidate",
+      "description": "Apply a recovery tag to approved contacts.",
+      "tool": "add_contact_tags",
+      "input": {
+        "contactId": "{{contactId}}",
+        "tags": ["recovery-candidate", "{{lostReasonTag}}"]
+      }
+    },
+    {
+      "id": "enroll-in-workflow",
+      "description": "Enroll the approved contact into the recovery workflow.",
+      "tool": "add_contact_to_workflow",
+      "input": {
+        "contactId": "{{contactId}}",
+        "workflowId": "{{workflowId}}"
+      }
+    }
+  ],
+  "confirmationPoints": ["Before workflow enrollment", "Before enrolling contacts without recent consent"],
+  "output": "Return enrolled contact IDs, skipped contacts, and the workflow ID used."
+}

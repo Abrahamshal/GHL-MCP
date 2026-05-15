@@ -1,0 +1,37 @@
+# Companion Tooling
+
+This repo ships a GoHighLevel MCP server plus a small tooling loop that keeps the tool surface aligned with GHL's public API docs. The tooling is intentionally practical: scan upstream docs, classify coverage, generate missing official tools, generate the API dashboard/tool inventory, smoke test read-only live calls, and open a daily drift PR when upstream changes.
+
+## Quick Commands
+
+Run these from the repo root.
+
+| Command | Purpose |
+| --- | --- |
+| `npm run build` | Compile the MCP server. |
+| `npm run start:stdio` | Start the stdio MCP server for desktop clients. |
+| `npm run start:http` | Start the HTTP MCP server. |
+| `npm run lint` | Type-check/build-check the server. |
+| `npm test` | Run Jest tests. |
+| `npm run scan:ghl-api` | Refresh official docs, generated official tools, coverage JSON/report, dashboard, inventory, and local-only classification. |
+| `npm run ci:ghl-api-drift` | CI guard that fails when generated API coverage artifacts are stale. |
+| `npm run smoke:ghl-live` | Run read-only live GHL checks when credentials are present. |
+| `npm run tools:doctor` | Check local setup, build output, credentials, and API coverage state. |
+| `npm run tools:list` | List the registered MCP tools from the built registry. |
+| `npm run tools:report` | Generate `docs/API-DASHBOARD.md` and `docs/tool-inventory.json`. |
+| `npm run tools:explorer` | Print the local `docs/tool-explorer.html` path for browsing the inventory. |
+| `npm run tools:configure` | Print a stdio MCP client config snippet. |
+| `npm run tools:update-api` | Run the full official API refresh pipeline. |
+
+## Tooling Map
+
+- [CLI Commands](tooling/cli-commands.md) covers server, scanner, generator, CI, and smoke commands.
+- [API Coverage Dashboard](tooling/api-coverage.md) explains `docs/GHL-API-COVERAGE-REPORT.md`, `docs/GHL-LOCAL-ENDPOINT-CLASSIFICATION.md`, and `docs/ghl-api-coverage.json`.
+- [Client Config Generator](tooling/client-config-generator.md) defines the recommended generated config shapes for MCP clients.
+- [Live Smoke Testing](tooling/live-smoke-testing.md) documents the read-only smoke policy and required environment variables.
+- [Daily Drift PR Flow](tooling/daily-drift-pr-flow.md) describes the scheduled refresh workflow and review rules.
+- [Tool Metadata Categories](tooling/tool-metadata-categories.md) defines the MCP `_meta.labels` conventions used by generated and handwritten tools.
+
+## Operating Rule
+
+Generated API coverage artifacts are outputs, not hand-authored docs. If they drift, run `npm run scan:ghl-api`, review the diff, and commit the generated changes with any deliberate MCP tool updates.

@@ -71,7 +71,7 @@ class GHLMCPHttpServer {
       { name: 'ghl-mcp-server', version: '2.0.0' },
       { capabilities: { tools: {} } }
     );
-    const allTools = this.registry.getAllToolDefinitions([]);
+    const allTools = this.registry.getAllToolDefinitions();
 
     server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: allTools }));
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -115,7 +115,7 @@ class GHLMCPHttpServer {
     });
 
     this.app.get('/tools', (_req, res) => {
-      res.json({ tools: this.registry.getAllToolDefinitions([]), count: this.registry.getToolCount() });
+      res.json({ tools: this.registry.getAllToolDefinitions(), count: this.registry.getToolCount() });
     });
 
     this.app.post('/tools/call', async (req, res) => {

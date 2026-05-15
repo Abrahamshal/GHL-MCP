@@ -1,0 +1,55 @@
+{
+  "id": "lead-intake-and-dedupe",
+  "title": "Lead intake and dedupe",
+  "goal": "Create or update a lead without creating duplicates, then tag it and create a follow-up task.",
+  "requiredInputs": ["email"],
+  "optionalInputs": ["firstName", "lastName", "phone", "source", "tags", "ownerUserId", "dueDate"],
+  "steps": [
+    {
+      "id": "search-existing-contact",
+      "description": "Search for an existing contact by email before writing anything.",
+      "tool": "search_contacts",
+      "input": {
+        "email": "{{email}}",
+        "limit": 5
+      }
+    },
+    {
+      "id": "create-contact-if-missing",
+      "description": "Create the contact only when the search returns no reliable match.",
+      "tool": "create_contact",
+      "input": {
+        "firstName": "{{firstName}}",
+        "lastName": "{{lastName}}",
+        "email": "{{email}}",
+        "phone": "{{phone}}",
+        "tags": "{{tags}}",
+        "source": "{{source}}"
+      }
+    },
+    {
+      "id": "tag-existing-contact",
+      "description": "If a match exists, add intake/source tags instead of creating a duplicate.",
+      "tool": "add_contact_tags",
+      "input": {
+        "contactId": "{{matchedContactId}}",
+        "tags": "{{tags}}"
+      }
+    },
+    {
+      "id": "create-follow-up-task",
+      "description": "Create an owner-visible follow-up task.",
+      "tool": "create_contact_task",
+      "input": {
+        "contactId": "{{contactId}}",
+        "title": "Follow up with new lead",
+        "body": "Lead source: {{source}}. Confirm need, budget, and timeline.",
+        "dueDate": "{{dueDate}}",
+        "assignedTo": "{{ownerUserId}}",
+        "completed": false
+      }
+    }
+  ],
+  "confirmationPoints": ["Before creating a new contact if the search returns possible duplicates"],
+  "output": "Return the contact ID, whether it was created or matched, tags applied, and task ID."
+}

@@ -23,6 +23,10 @@ interface OfficialEndpoint {
   operationId: string;
   versions: string[];
   scopes: string[];
+  sourceFile: string;
+  source: string;
+  stability: string;
+  deprecated?: boolean;
   pathParams: string[];
   queryParams: Array<{
     name: string;
@@ -42,9 +46,13 @@ export class OfficialSpecTools {
     return ENDPOINTS.map((endpoint) => ({
       name: endpoint.name,
       description: [
+        endpoint.deprecated ? 'Deprecated compatibility endpoint.' : '',
+        endpoint.stability === 'live-docs-supplemental' ? 'Live-docs supplemental endpoint.' : '',
         endpoint.summary,
         `Official GHL API endpoint: ${endpoint.method} ${endpoint.path}.`,
+        endpoint.versions.length ? `Version: ${endpoint.versions[0]}.` : '',
         endpoint.scopes.length ? `Scopes: ${endpoint.scopes.join(', ')}.` : '',
+        endpoint.queryParams.some((param) => param.name === 'locationId') ? 'Uses configured locationId when omitted.' : '',
       ].filter(Boolean).join(' '),
       inputSchema: this.buildInputSchema(endpoint),
       _meta: {
@@ -52,15 +60,18 @@ export class OfficialSpecTools {
           category: `official-${endpoint.app}`,
           access: endpoint.method === 'GET' ? 'read' : endpoint.method === 'DELETE' ? 'delete' : 'write',
           complexity: 'generated',
-          source: 'official-ghl-openapi',
+          source: endpoint.source,
+          stability: endpoint.stability,
         },
         official: {
           app: endpoint.app,
+          sourceFile: endpoint.sourceFile,
           operationId: endpoint.operationId,
           method: endpoint.method,
           path: endpoint.path,
           versions: endpoint.versions,
           scopes: endpoint.scopes,
+          deprecated: endpoint.deprecated || undefined,
         },
       },
     }));

@@ -19,16 +19,17 @@ Use these commands from the repository root. Keep command behavior MCP-focused: 
 | `npm run lint` | Runs the build checker without emitting server output. |
 | `npm test` | Runs Jest tests. |
 | `npm run test:coverage` | Runs Jest with coverage reporting. |
+| `npm run validate:api-lock` | Verifies `docs/api-sources.lock.json` matches generated API coverage artifacts. |
 
 ## Companion CLI Commands
 
 | Command | Use |
 | --- | --- |
 | `npm run tools:doctor` | Checks Node, build output, local env, and generated API coverage state. |
-| `npm run tools:list` | Lists registered MCP tools from the built registry. |
+| `npm run tools:list` | Lists registered MCP tools from the built registry. Supports `--search`, `--category`, and `--stability`. |
 | `npm run tools:report` | Writes `docs/API-DASHBOARD.md` and `docs/tool-inventory.json`. |
 | `npm run tools:explorer` | Prints the local static explorer path for browsing `docs/tool-inventory.json`. |
-| `npm run tools:configure` | Prints a Claude-compatible stdio MCP config snippet. |
+| `npm run tools:configure` | Prints a Codex-compatible stdio MCP config snippet. |
 | `npm run tools:update-api` | Runs the official API refresh pipeline. |
 | `node scripts/ghl-mcp.mjs test-tool <name> '<json>'` | Executes one tool locally. Write/delete tools require `--confirm`. |
 
@@ -38,14 +39,14 @@ The package also exposes `ghl-mcp` as a bin command after install or publish.
 
 | Command | Use |
 | --- | --- |
-| `npm run scan:ghl-api` | Refreshes the upstream GHL docs checkout, regenerates official spec tools, rescans coverage, classifies local-only endpoints, and regenerates the dashboard/inventory. |
-| `npm run ci:ghl-api-drift` | Runs the scanner and fails if generated coverage, dashboard, inventory, or generated official tools changed. |
+| `npm run scan:ghl-api` | Refreshes the upstream GHL docs checkout, regenerates official spec tools, rescans coverage, validates the source lock, classifies local-only endpoints, and regenerates the dashboard/inventory. |
+| `npm run ci:ghl-api-drift` | Runs the scanner and fails if generated coverage, source lock, dashboard, inventory, or generated official tools changed. |
 | `node scripts/scan-ghl-api-coverage.mjs --refresh` | Refreshes `tmp/highlevel-api-docs` from `GoHighLevel/highlevel-api-docs` and writes coverage outputs. |
 | `node scripts/generate-official-spec-tools.mjs` | Regenerates official fallback MCP tools from `docs/ghl-api-coverage.json`. |
 
 ## Live Smoke Command
 
-`npm run smoke:ghl-live` runs read-only GET checks against the configured GHL account. It exits cleanly without credentials, so it can be wired into local preflight without leaking secrets into CI logs.
+`npm run smoke:ghl-live` runs read-only checks against the configured GHL account, including current Email V2 list endpoints. It exits cleanly without credentials, so it can be wired into local preflight without leaking secrets into CI logs.
 
 Required variables:
 
@@ -58,5 +59,8 @@ Optional variables:
 
 ```sh
 GHL_BASE_URL=https://services.leadconnectorhq.com
-GHL_API_VERSION=2021-07-28
+GHL_API_VERSION=2023-02-21
+GHL_LIVE_SMOKE_TIMEOUT_MS=15000
 ```
+
+Optional POST-based smoke checks stay disabled unless `GHL_LIVE_WRITE_SMOKE=1` is set. These are limited to non-mutating search-style calls unless a future check explicitly documents a create/delete cleanup pair.

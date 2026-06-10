@@ -4,7 +4,7 @@ The config generator emits MCP client snippets from the server's runtime setting
 
 ```sh
 npm run tools:configure
-node scripts/ghl-mcp.mjs configure claude
+node scripts/ghl-mcp.mjs configure codex
 ```
 
 ## Inputs
@@ -16,7 +16,7 @@ Use environment variables already understood by the server:
 | `GHL_API_KEY` | Yes | Bearer token used by the MCP server when calling GHL. |
 | `GHL_LOCATION_ID` | Yes | Default location ID supplied to tools that accept `locationId`. |
 | `GHL_BASE_URL` | No | Defaults to `https://services.leadconnectorhq.com`. |
-| `GHL_API_VERSION` | No | Defaults to `2021-07-28`. |
+| `GHL_API_VERSION` | No | Defaults to `2023-02-21`. |
 
 ## Recommended Outputs
 

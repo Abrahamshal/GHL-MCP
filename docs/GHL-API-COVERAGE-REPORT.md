@@ -1,22 +1,22 @@
 # GHL API Coverage Report
 
-Generated from official GHL docs commit: 192cd68
+Generated from official GHL docs commit: ae4d260
 
 ## Source Snapshot
 
 - Official docs repo: https://github.com/GoHighLevel/highlevel-api-docs.git
 - Docs checkout: `tmp/highlevel-api-docs`
-- Docs commit: `192cd68b065a7423c543d82721eb8644cdc883c7`
-- Docs tag/description: `192cd68`
-- Official endpoint references parsed: 576
-- Local endpoint references parsed: 833
-- Local TypeScript files scanned: 58
+- Docs commit: `ae4d260aada8e4340e1603a5573f977778e13ffd`
+- Docs tag/description: `ae4d260`
+- Official endpoint references parsed: 590
+- Local endpoint references parsed: 847
+- Local TypeScript files scanned: 59
 
 ## Coverage Summary
 
-- Unique official endpoints: 576
-- Unique local endpoints: 829
-- Official endpoints with an exact method/path match locally: 576
+- Unique official endpoints: 590
+- Unique local endpoints: 843
+- Official endpoints with an exact method/path match locally: 590
 - Exact-match coverage: 100%
 - Likely missing official endpoints: 0
 - Potential local-only/deprecated/private endpoints: 253
@@ -44,6 +44,7 @@ Exact matching is intentionally conservative. Dynamic path generation, aliases, 
 | products | 27 | 27 | 0 |
 | payments | 23 | 23 | 0 |
 | saas-api | 22 | 22 | 0 |
+| emails | 19 | 19 | 0 |
 | store | 18 | 18 | 0 |
 | knowledge-base | 14 | 14 | 0 |
 | conversation-ai | 12 | 12 | 0 |
@@ -62,7 +63,6 @@ Exact matching is intentionally conservative. Dynamic path generation, aliases, 
 | brand-boards | 5 | 5 | 0 |
 | businesses | 5 | 5 | 0 |
 | custom-menus | 5 | 5 | 0 |
-| emails | 5 | 5 | 0 |
 | affiliate-manager | 4 | 4 | 0 |
 | phone-system | 4 | 4 | 0 |
 | proposals | 4 | 4 | 0 |
@@ -105,14 +105,14 @@ These deserve manual review because they may be legacy, private, renamed, or sim
 
 ## Recommended Update Plan
 
-1. Add a CI-friendly version of this scanner so API drift is visible after every docs refresh.
+1. Keep the scanner pointed at both the official GitHub OpenAPI fragments and live-docs supplemental endpoints that have not landed in the GitHub repo yet.
 2. Make `GHL_API_VERSION` configurable in all server entry points and keep endpoint-specific overrides for APIs that still require older version headers.
-3. Review `users-tools.ts` against the latest official users spec and retire or alias deprecated `GET /users/` behavior.
+3. Mark deprecated `GET /users/` behavior clearly in user-facing docs/tool descriptions while preserving compatibility as long as the official spec still lists it.
 4. Keep the first-class top-level Notes module in place for the 2026-04-21 changelog endpoints, and reconcile it against the official spec once those endpoints land in the docs repo.
-5. Upgrade `email-tools.ts` and `campaigns-tools.ts` toward the Email Campaign V2 endpoints under `/emails/*`; preserve old tool names as compatibility aliases where practical.
+5. Keep Email Campaign V2 tools under `/emails/public/v2/*` as live-docs supplemental coverage until HighLevel publishes them in `apps/emails.json`.
 6. Update OAuth/private-integration scope documentation for new audit-log, location-management, and payment-settings scopes.
 7. Manually inspect local-only campaign, workflow, OAuth, and trigger endpoints. If they are internal/private APIs, mark them clearly in tool descriptions and README so users know their stability profile.
-8. Add targeted tests for each migrated module using the current official path, method, version header, and required query/body fields.
+8. Add targeted tests for live-docs supplemental modules using the current official path, method, version header, and required query/body fields.
 
 ## Full Machine-Readable Output
 

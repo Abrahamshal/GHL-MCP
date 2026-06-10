@@ -82,12 +82,15 @@ export interface ToolInventoryItem {
   required: string[];
   scopes: string[];
   source: string;
+  stability: ToolStability;
   method?: string;
   path?: string;
   operationId?: string;
+  deprecated?: boolean;
 }
 
-type ToolProfile = 'full' | 'curated' | 'raw';
+type ToolProfile = 'full' | 'curated' | 'raw' | 'official' | 'stable';
+type ToolStability = 'official' | 'live-docs-supplemental' | 'legacy-compatible' | 'private-or-unstable' | 'deprecated';
 
 // ─── Annotation Inference ───────────────────────────────────
 
@@ -151,6 +154,7 @@ function inferToolInventoryItem(tool: Tool, moduleName: string): ToolInventoryIt
   const meta = (tool as any)._meta || {};
   const labels = meta.labels || {};
   const official = meta.official || {};
+  const stability = inferToolStability(tool);
   const annotations = inferAnnotations(tool.name, meta);
   const schema = (tool as any).inputSchema || {};
   const required = Array.isArray(schema.required) ? schema.required.map(String) : [];
@@ -167,10 +171,50 @@ function inferToolInventoryItem(tool: Tool, moduleName: string): ToolInventoryIt
     required,
     scopes: Array.isArray(official.scopes) ? official.scopes : [],
     source: labels.source || (official.operationId ? 'official-ghl-openapi' : 'local-tool-module'),
+    stability,
     method: official.method,
     path: official.path,
     operationId: official.operationId,
+    deprecated: official.deprecated || stability === 'deprecated' || undefined,
   };
+}
+
+function inferToolStability(tool: Tool): ToolStability {
+  const meta = (tool as any)._meta || {};
+  const labels = meta.labels || {};
+  const official = meta.official || {};
+  const labeledStability = labels.stability;
+  const source = String(labels.source || '');
+  const category = String(labels.category || '');
+  const description = `${tool.description || ''} ${official.operationId || ''}`.toLowerCase();
+  const path = String(official.path || '');
+
+  if (isKnownStability(labeledStability)) return labeledStability;
+  if (category === 'agent-workspace' || source === 'curated-agent-workspace') return 'legacy-compatible';
+  if (official.deprecated || description.includes('deprecated')) return 'deprecated';
+  if (source === 'live-ghl-docs' || path.startsWith('/emails/public/v2/')) return 'live-docs-supplemental';
+  if (official.operationId || source === 'official-ghl-openapi') return 'official';
+  if (isDeprecatedOrCompatibilityPath(path, tool.name)) return 'deprecated';
+  if (isPrivateOrInternalPath(path, category, tool.name, description)) return 'private-or-unstable';
+  return 'legacy-compatible';
+}
+
+function isKnownStability(value: unknown): value is ToolStability {
+  return value === 'official' ||
+    value === 'live-docs-supplemental' ||
+    value === 'legacy-compatible' ||
+    value === 'private-or-unstable' ||
+    value === 'deprecated';
+}
+
+function isDeprecatedOrCompatibilityPath(path: string, toolName: string): boolean {
+  return /\/campaigns|\/emails\/schedule|\/emails\/builder|\/contacts\/[^/]+\/campaigns|scheduled-messages/i.test(path) ||
+    /deprecated|legacy|scheduled_message|campaign/.test(toolName.toLowerCase());
+}
+
+function isPrivateOrInternalPath(path: string, category: string, toolName: string, description: string): boolean {
+  const value = `${path} ${category} ${toolName} ${description}`;
+  return /oauth|login|firebase|integrations|internal|marketplace|social-media-posting|saas|snapshots|phone|voice-ai|proposals|custom-menus|workflowbuilder/i.test(value);
 }
 
 // ─── Tool Registry ──────────────────────────────────────────
@@ -450,8 +494,11 @@ export class ToolRegistry {
     const category = ((tool as any)._meta?.labels?.category || '').toString();
     const source = ((tool as any)._meta?.labels?.source || '').toString();
     const isCurated = category === 'agent-workspace' || source === 'curated-agent-workspace';
+    const stability = inferToolStability(tool);
     if (this.profile === 'curated') return isCurated;
     if (this.profile === 'raw') return !isCurated;
+    if (this.profile === 'official') return stability === 'official' || stability === 'live-docs-supplemental';
+    if (this.profile === 'stable') return isCurated || stability === 'official' || stability === 'live-docs-supplemental' || stability === 'legacy-compatible';
     return true;
   }
 }
@@ -460,7 +507,7 @@ export class ToolRegistry {
 
 function readToolProfile(): ToolProfile {
   const value = (process.env.GHL_TOOL_PROFILE || 'full').toLowerCase();
-  if (value === 'curated' || value === 'raw' || value === 'full') return value;
+  if (value === 'curated' || value === 'raw' || value === 'full' || value === 'official' || value === 'stable') return value;
   process.stderr.write(`[Registry] Unknown GHL_TOOL_PROFILE=${value}; using full.\n`);
   return 'full';
 }

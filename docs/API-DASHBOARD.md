@@ -1,19 +1,27 @@
 # GoHighLevel MCP API Dashboard
 
-Generated from official GHL docs commit: 192cd68
+Generated from official GHL docs commit: ae4d260
 
 ## Coverage
 
 - Official GHL docs source: https://github.com/GoHighLevel/highlevel-api-docs.git
-- Official docs commit: 192cd68
-- Official endpoints parsed: 576
-- Official endpoints covered: 576
+- Official docs commit: ae4d260
+- Official endpoints parsed: 590
+- Official endpoints covered: 590
 - Coverage: 100%
-- MCP tools in registry: 834
-- Read tools: 414
-- Write tools: 314
-- Delete/destructive tools: 106
+- MCP tools in registry: 848
+- Read tools: 419
+- Write tools: 321
+- Delete/destructive tools: 108
 - Local-only endpoint references tracked: 253
+
+## Stability Tiers
+
+- Official OpenAPI tools: 237
+- Live-docs supplemental tools: 14
+- Legacy-compatible tools: 486
+- Private/internal unstable tools: 87
+- Deprecated/compatibility tools: 24
 
 ## Largest Tool Categories
 

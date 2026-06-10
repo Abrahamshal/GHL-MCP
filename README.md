@@ -4,10 +4,10 @@ Model Context Protocol server for GoHighLevel. It exposes GHL API operations as 
 
 ## Current API Coverage
 
-- Official GHL endpoints parsed: `576`
-- Official endpoint coverage: `576 / 576`
+- Official GHL endpoints parsed: `590`
+- Official endpoint coverage: `590 / 590`
 - Generated official endpoint tools: `238`
-- MCP tools in registry: `834` (`802` raw API tools plus `32` curated agent workflow tools)
+- MCP tools in registry: `848` (`816` raw API tools plus `32` curated agent workflow tools)
 - Local-only endpoint references tracked for review: `253`
 - Daily GitHub Actions refresh opens a PR when the official GHL API docs change.
 
@@ -15,6 +15,7 @@ Coverage artifacts:
 
 - `docs/GHL-API-COVERAGE-REPORT.md`
 - `docs/GHL-LOCAL-ENDPOINT-CLASSIFICATION.md`
+- `docs/api-sources.lock.json`
 - `docs/ghl-api-coverage.json`
 - `docs/API-DASHBOARD.md`
 - `docs/tool-inventory.json`
@@ -28,7 +29,7 @@ npm run tools:doctor       # Check build output, env, and API coverage health
 npm run tools:list         # Browse the registered MCP tool inventory
 npm run tools:report       # Regenerate the API dashboard and tool inventory JSON
 npm run tools:explorer     # Print the local static tool explorer path
-npm run tools:configure    # Print a Claude-compatible MCP config snippet
+npm run tools:configure    # Print a Codex-compatible MCP config snippet
 npm run tools:update-api   # Refresh official GHL API coverage and generated tools
 ```
 
@@ -37,7 +38,7 @@ Direct CLI usage:
 ```bash
 npx ghl-mcp doctor
 npx ghl-mcp list-tools --search ads
-npx ghl-mcp configure claude
+npx ghl-mcp configure codex
 npx ghl-mcp test-tool search_contacts '{"locationId":"your_location_id","pageLimit":1}'
 ```
 
@@ -49,17 +50,23 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for contributor acknowledgements.
 
 ## Agent Tool Profiles
 
-By default, the server exposes the full tool surface: raw endpoint tools plus the curated CRM workflow layer. Agents that work better with fewer, higher-level actions can use:
+By default, the server exposes the full tool surface: raw endpoint tools plus the curated CRM workflow layer. Agents that work better with fewer, higher-level actions or stricter stability boundaries can use:
 
 ```bash
 GHL_TOOL_PROFILE=curated npm run start:stdio
+GHL_TOOL_PROFILE=stable npm run start:stdio
+GHL_TOOL_PROFILE=official npm run start:stdio
 ```
 
 Profiles:
 
-- `full` - default; exposes all `834` tools.
+- `full` - default; exposes all `848` tools.
 - `curated` - exposes only the `32` agent workspace tools, such as `crm_prepare_lead_intake`, `crm_prepare_conversation_reply`, `crm_prepare_appointment_booking`, and `crm_location_health_check`.
-- `raw` - exposes only the original `802` endpoint-level tools.
+- `raw` - exposes only the original `816` endpoint-level tools.
+- `official` - exposes explicit official OpenAPI and live-docs supplemental tools only.
+- `stable` - exposes official, live-docs supplemental, curated, and legacy-compatible tools while hiding deprecated and private/unstable surfaces.
+
+Every tool inventory entry includes a `stability` tier: `official`, `live-docs-supplemental`, `legacy-compatible`, `private-or-unstable`, or `deprecated`.
 
 The curated tools return structured confirmation queues for writes. They stage the exact raw tool calls an agent should execute after the user confirms, instead of making outbound messages, billing, workflow enrollment, stage moves, or snapshot pushes feel like one ambiguous API call.
 
@@ -79,7 +86,7 @@ Recipes use real MCP tool names and include confirmation points for actions like
 
 MCP Apps require Node 20+ because they use `@modelcontextprotocol/ext-apps`.
 
-The apps are wired to the curated CRM workflow tools first, so buttons like "Prepare lead intake," "Prepare booking," and "Prepare snapshot rollout" produce confirmation-gated action plans for ChatGPT, Claude, or another MCP host.
+The apps are wired to the curated CRM workflow tools first, so buttons like "Prepare lead intake," "Prepare booking," and "Prepare snapshot rollout" produce confirmation-gated action plans for ChatGPT, Codex, or another MCP host.
 
 ```bash
 npm run build
@@ -139,7 +146,7 @@ Set:
 GHL_API_KEY=your_private_integration_api_key
 GHL_LOCATION_ID=your_location_id
 GHL_BASE_URL=https://services.leadconnectorhq.com
-GHL_API_VERSION=2021-07-28
+GHL_API_VERSION=2023-02-21
 ```
 
 Build and run:
@@ -148,6 +155,16 @@ Build and run:
 npm run build
 npm run start:stdio
 ```
+
+## Verification
+
+```bash
+npm run scan:ghl-api
+npm run validate:api-lock
+npm test
+```
+
+`docs/api-sources.lock.json` records the official docs commit, expected endpoint counts, live-docs supplemental Email V2 pages, and acceptance gates verified on June 10, 2026. CI fails if generated coverage no longer matches this lock.
 
 For HTTP:
 
@@ -169,7 +186,7 @@ Example stdio config:
         "GHL_API_KEY": "your_private_integration_api_key",
         "GHL_LOCATION_ID": "your_location_id",
         "GHL_BASE_URL": "https://services.leadconnectorhq.com",
-        "GHL_API_VERSION": "2021-07-28"
+        "GHL_API_VERSION": "2023-02-21"
       }
     }
   }

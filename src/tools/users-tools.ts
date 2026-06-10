@@ -20,6 +20,10 @@ export class UsersTools {
               type: 'string',
               description: 'Location ID (uses default if not provided)'
             },
+            companyId: {
+              type: 'string',
+              description: 'Company/Agency ID'
+            },
             skip: {
               type: 'number',
               description: 'Number of records to skip for pagination'
@@ -48,6 +52,10 @@ export class UsersTools {
               type: 'string',
               enum: ['asc', 'desc'],
               description: 'Sort direction'
+            },
+            enabled2waySync: {
+              type: 'boolean',
+              description: 'Filter by two-way sync status'
             }
           }
         },
@@ -110,6 +118,23 @@ export class UsersTools {
               type: 'string',
               description: 'User phone number'
             },
+            twilioPhone: {
+              type: 'string',
+              description: 'Twilio phone number assigned to the user'
+            },
+            password: {
+              type: 'string',
+              description: 'User password'
+            },
+            companyId: {
+              type: 'string',
+              description: 'Company/Agency ID'
+            },
+            locationIds: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Location IDs assigned to the user'
+            },
             type: {
               type: 'string',
               description: 'User type (e.g., "account")'
@@ -131,6 +156,14 @@ export class UsersTools {
               type: 'array',
               items: { type: 'string' },
               description: 'Scopes only assigned to this user'
+            },
+            profilePhoto: {
+              type: 'string',
+              description: 'Profile photo URL'
+            },
+            platformLanguage: {
+              type: 'string',
+              description: 'Platform language preference'
             },
           },
           required: ['firstName', 'lastName', 'email']
@@ -173,6 +206,23 @@ export class UsersTools {
               type: 'string',
               description: 'User phone number'
             },
+            twilioPhone: {
+              type: 'string',
+              description: 'Twilio phone number assigned to the user'
+            },
+            password: {
+              type: 'string',
+              description: 'User password'
+            },
+            companyId: {
+              type: 'string',
+              description: 'Company/Agency ID'
+            },
+            locationIds: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Location IDs assigned to the user'
+            },
             type: {
               type: 'string',
               description: 'User type'
@@ -184,6 +234,24 @@ export class UsersTools {
             permissions: {
               type: 'object',
               description: 'User permissions object'
+            },
+            scopes: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'OAuth scopes for the user'
+            },
+            scopesAssignedToOnly: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Scopes only assigned to this user'
+            },
+            profilePhoto: {
+              type: 'string',
+              description: 'Profile photo URL'
+            },
+            platformLanguage: {
+              type: 'string',
+              description: 'Platform language preference'
             },
           },
           required: ['userId']
@@ -327,12 +395,18 @@ export class UsersTools {
           lastName: args.lastName,
           email: args.email
         };
+        if (args.companyId) body.companyId = args.companyId;
+        if (args.password) body.password = args.password;
         if (args.phone) body.phone = args.phone;
+        if (args.twilioPhone) body.twilioPhone = args.twilioPhone;
         if (args.type) body.type = args.type;
         if (args.role) body.role = args.role;
+        if (args.locationIds) body.locationIds = args.locationIds;
         if (args.permissions) body.permissions = args.permissions;
         if (args.scopes) body.scopes = args.scopes;
         if (args.scopesAssignedToOnly) body.scopesAssignedToOnly = args.scopesAssignedToOnly;
+        if (args.profilePhoto) body.profilePhoto = args.profilePhoto;
+        if (args.platformLanguage) body.platformLanguage = args.platformLanguage;
         
         return this.ghlClient.makeRequest('POST', `/users/`, body);
       }
@@ -343,10 +417,18 @@ export class UsersTools {
         if (args.firstName) body.firstName = args.firstName;
         if (args.lastName) body.lastName = args.lastName;
         if (args.email) body.email = args.email;
+        if (args.companyId) body.companyId = args.companyId;
+        if (args.password) body.password = args.password;
         if (args.phone) body.phone = args.phone;
+        if (args.twilioPhone) body.twilioPhone = args.twilioPhone;
         if (args.type) body.type = args.type;
         if (args.role) body.role = args.role;
+        if (args.locationIds) body.locationIds = args.locationIds;
         if (args.permissions) body.permissions = args.permissions;
+        if (args.scopes) body.scopes = args.scopes;
+        if (args.scopesAssignedToOnly) body.scopesAssignedToOnly = args.scopesAssignedToOnly;
+        if (args.profilePhoto) body.profilePhoto = args.profilePhoto;
+        if (args.platformLanguage) body.platformLanguage = args.platformLanguage;
         
         return this.ghlClient.makeRequest('PUT', `/users/${userId}`, body);
       }

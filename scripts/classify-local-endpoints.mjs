@@ -11,18 +11,21 @@ const outPath = join(repoRoot, 'docs', 'GHL-LOCAL-ENDPOINT-CLASSIFICATION.md');
 const coverage = JSON.parse(readFileSync(coveragePath, 'utf8'));
 
 const buckets = {
-  dynamicOrTemplated: [],
-  changelogOnlyNotes: [],
-  legacyPrivateInternal: [],
-  compatibilityWrappers: [],
+  officialScannerMissed: [],
+  liveDocsSupplemental: [],
+  legacyStillUseful: [],
+  privateInternalUnstable: [],
+  deprecatedOrAliased: [],
   needsReview: [],
 };
 
 for (const endpoint of coverage.comparison.localOnly) {
-  if (endpoint.path.startsWith('/notes')) buckets.changelogOnlyNotes.push(endpoint);
-  else if (/oauth|login|firebase|integrations|internal|marketplace|workflow|trigger|social-media-posting|saas|snapshots|phone|voice-ai|proposals|custom-menus/i.test(endpoint.path)) buckets.legacyPrivateInternal.push(endpoint);
-  else if (/campaigns|emails|templates|scheduled|messages|reporting|apps|builder/i.test(endpoint.path)) buckets.compatibilityWrappers.push(endpoint);
-  else if (/[{}]|\{param\}/.test(endpoint.path)) buckets.dynamicOrTemplated.push(endpoint);
+  if (isLiveDocsSupplemental(endpoint)) buckets.liveDocsSupplemental.push(endpoint);
+  else if (endpoint.path.startsWith('/notes')) buckets.legacyStillUseful.push(endpoint);
+  else if (isDeprecatedOrAliased(endpoint)) buckets.deprecatedOrAliased.push(endpoint);
+  else if (isPrivateOrInternal(endpoint)) buckets.privateInternalUnstable.push(endpoint);
+  else if (isLegacyStillUseful(endpoint)) buckets.legacyStillUseful.push(endpoint);
+  else if (isLikelyScannerMissed(endpoint)) buckets.officialScannerMissed.push(endpoint);
   else buckets.needsReview.push(endpoint);
 }
 
@@ -30,32 +33,47 @@ const report = `# GHL Local-Only Endpoint Classification
 
 Generated from \`docs/ghl-api-coverage.json\`.
 
+Every local-only endpoint is classified into one of the implementation-plan categories. Local-only does not automatically mean wrong; it means the endpoint was not matched by the official GitHub OpenAPI fragments plus the live-docs supplemental endpoint list.
+
 ## Summary
 
 - Total local-only endpoint references: ${coverage.comparison.localOnly.length}
-- Changelog-only Notes endpoints: ${buckets.changelogOnlyNotes.length}
-- Legacy/private/internal endpoints: ${buckets.legacyPrivateInternal.length}
-- Compatibility wrappers: ${buckets.compatibilityWrappers.length}
-- Dynamic or templated endpoints needing manual mapping: ${buckets.dynamicOrTemplated.length}
+- Official but scanner-missed candidates: ${buckets.officialScannerMissed.length}
+- Live-docs supplemental candidates: ${buckets.liveDocsSupplemental.length}
+- Legacy but still useful: ${buckets.legacyStillUseful.length}
+- Private/internal and unstable: ${buckets.privateInternalUnstable.length}
+- Deprecated or compatibility aliases: ${buckets.deprecatedOrAliased.length}
 - Needs manual review: ${buckets.needsReview.length}
 
-## Changelog-Only Notes
+## Official But Scanner-Missed Candidates
 
-${format(buckets.changelogOnlyNotes)}
+These should be checked against current live docs and promoted into the supplemental official list if confirmed.
 
-## Legacy/Private/Internal
+${format(buckets.officialScannerMissed)}
 
-${format(buckets.legacyPrivateInternal)}
+## Live-Docs Supplemental Candidates
 
-## Compatibility Wrappers
+These are expected to disappear from local-only once their paths are added to the supplemental official list or published in HighLevel's GitHub OpenAPI fragments.
 
-${format(buckets.compatibilityWrappers)}
+${format(buckets.liveDocsSupplemental)}
 
-## Dynamic Or Templated
+## Legacy But Still Useful
 
-These are not assumed official. The scanner normalized template expressions to \`{param}\`, so each should be checked against the official OpenAPI path names before keeping, aliasing, or retiring it.
+These should remain available for compatibility, but their descriptions should make the stability profile clear.
 
-${format(buckets.dynamicOrTemplated)}
+${format(buckets.legacyStillUseful)}
+
+## Private/Internal And Unstable
+
+These should remain opt-in or clearly labeled because they appear private, internal, marketplace-specific, or less stable than public REST APIs.
+
+${format(buckets.privateInternalUnstable)}
+
+## Deprecated Or Compatibility Aliases
+
+These should be preserved only as aliases/wrappers where useful, with newer official endpoints preferred in docs and examples.
+
+${format(buckets.deprecatedOrAliased)}
 
 ## Needs Manual Review
 
@@ -69,4 +87,24 @@ console.log(`Wrote ${outPath}`);
 function format(items) {
   if (!items.length) return '- None';
   return items.map((item) => `- \`${item.method} ${item.path}\` (${item.sourceFile})`).join('\n');
+}
+
+function isLiveDocsSupplemental(endpoint) {
+  return /^\/emails\/public\/v2\//.test(endpoint.path);
+}
+
+function isDeprecatedOrAliased(endpoint) {
+  return /\/campaigns|\/emails\/schedule|\/emails\/builder|\/contacts\/[^/]+\/campaigns|scheduled-messages/i.test(endpoint.path);
+}
+
+function isPrivateOrInternal(endpoint) {
+  return /oauth|login|firebase|integrations|internal|marketplace|social-media-posting|saas|snapshots|phone|voice-ai|proposals|custom-menus/i.test(endpoint.path);
+}
+
+function isLegacyStillUseful(endpoint) {
+  return /\/notes|workflow|trigger|affiliates|reporting|courses|templates|smartlists|reputation|webhooks|forms|funnels|companies|links/i.test(endpoint.path);
+}
+
+function isLikelyScannerMissed(endpoint) {
+  return /[{}]|\{param\}/.test(endpoint.path);
 }

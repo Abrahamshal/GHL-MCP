@@ -164,6 +164,187 @@ export class EmailTools {
             complexity: "simple"
           }
         }
+      },
+      {
+        name: 'create_email_campaign_v2',
+        description: 'Create an Email Campaign V2 draft using the public 2023-02-21 Email Campaigns V2 API.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'Location ID (uses default if not provided).' },
+            body: { type: 'object', description: 'Full request body for the campaign.', additionalProperties: true },
+            payload: { type: 'object', description: 'Alias for body.', additionalProperties: true }
+          }
+        },
+        _meta: {
+          labels: {
+            category: "email",
+            access: "write",
+            complexity: "simple",
+            source: "live-ghl-docs"
+          },
+          official: {
+            method: "POST",
+            path: "/emails/public/v2/locations/{locationId}/campaigns/email-campaign"
+          }
+        }
+      },
+      {
+        name: 'list_email_campaigns_v2',
+        description: 'List Email Campaign V2 campaigns for a location.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'Location ID (uses default if not provided).' },
+            limit: { type: 'number', description: 'Maximum records to return.' },
+            offset: { type: 'number', description: 'Records to skip for pagination.' },
+            skip: { type: 'number', description: 'Records to skip for pagination.' },
+            query: { type: 'string', description: 'Search query.' },
+            status: { type: 'string', description: 'Campaign status filter.' }
+          }
+        },
+        _meta: {
+          labels: {
+            category: "email",
+            access: "read",
+            complexity: "simple",
+            source: "live-ghl-docs"
+          },
+          official: {
+            method: "GET",
+            path: "/emails/public/v2/locations/{locationId}/campaigns/emails"
+          }
+        }
+      },
+      {
+        name: 'update_email_campaign_v2',
+        description: 'Update an Email Campaign V2 draft.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'Location ID (uses default if not provided).' },
+            campaignId: { type: 'string', description: 'Email campaign ID.' },
+            body: { type: 'object', description: 'Full request body for the update.', additionalProperties: true },
+            payload: { type: 'object', description: 'Alias for body.', additionalProperties: true }
+          },
+          required: ['campaignId']
+        },
+        _meta: {
+          labels: {
+            category: "email",
+            access: "write",
+            complexity: "simple",
+            source: "live-ghl-docs"
+          },
+          official: {
+            method: "PATCH",
+            path: "/emails/public/v2/locations/{locationId}/campaigns/{campaignId}"
+          }
+        }
+      },
+      {
+        name: 'delete_email_campaign_v2',
+        description: 'Delete an Email Campaign V2 campaign.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'Location ID (uses default if not provided).' },
+            campaignId: { type: 'string', description: 'Email campaign ID.' }
+          },
+          required: ['campaignId']
+        },
+        _meta: {
+          labels: {
+            category: "email",
+            access: "delete",
+            complexity: "simple",
+            source: "live-ghl-docs"
+          },
+          official: {
+            method: "DELETE",
+            path: "/emails/public/v2/locations/{locationId}/campaigns/{campaignId}"
+          }
+        }
+      },
+      {
+        name: 'list_workflow_campaigns_v2',
+        description: 'List Email Campaigns V2 workflow campaigns for a location.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'Location ID (uses default if not provided).' },
+            limit: { type: 'number', description: 'Maximum records to return.' },
+            offset: { type: 'number', description: 'Records to skip for pagination.' },
+            skip: { type: 'number', description: 'Records to skip for pagination.' },
+            query: { type: 'string', description: 'Search query.' },
+            status: { type: 'string', description: 'Campaign status filter.' }
+          }
+        },
+        _meta: {
+          labels: {
+            category: "email",
+            access: "read",
+            complexity: "simple",
+            source: "live-ghl-docs"
+          },
+          official: {
+            method: "GET",
+            path: "/emails/public/v2/locations/{locationId}/campaigns/workflows"
+          }
+        }
+      },
+      {
+        name: 'list_bulk_action_campaigns_v2',
+        description: 'List Email Campaigns V2 bulk action campaigns for a location.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'Location ID (uses default if not provided).' },
+            limit: { type: 'number', description: 'Maximum records to return.' },
+            offset: { type: 'number', description: 'Records to skip for pagination.' },
+            skip: { type: 'number', description: 'Records to skip for pagination.' },
+            query: { type: 'string', description: 'Search query.' },
+            status: { type: 'string', description: 'Campaign status filter.' }
+          }
+        },
+        _meta: {
+          labels: {
+            category: "email",
+            access: "read",
+            complexity: "simple",
+            source: "live-ghl-docs"
+          },
+          official: {
+            method: "GET",
+            path: "/emails/public/v2/locations/{locationId}/campaigns/bulk-actions"
+          }
+        }
+      },
+      {
+        name: 'schedule_email_campaign_v2',
+        description: 'Schedule or start an Email Campaign V2 campaign. The campaign must be in draft, cancelled, or paused status.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            locationId: { type: 'string', description: 'Location ID (uses default if not provided).' },
+            campaignId: { type: 'string', description: 'Email campaign ID.' },
+            body: { type: 'object', description: 'Full scheduling request body.', additionalProperties: true },
+            payload: { type: 'object', description: 'Alias for body.', additionalProperties: true }
+          },
+          required: ['campaignId']
+        },
+        _meta: {
+          labels: {
+            category: "email",
+            access: "write",
+            complexity: "simple",
+            source: "live-ghl-docs"
+          },
+          official: {
+            method: "POST",
+            path: "/emails/public/v2/locations/{locationId}/campaigns/{campaignId}/schedule"
+          }
+        }
       }
     ];
   }
@@ -183,6 +364,20 @@ export class EmailTools {
         return this.updateEmailTemplate(args as MCPUpdateEmailTemplateParams);
       case 'delete_email_template':
         return this.deleteEmailTemplate(args as MCPDeleteEmailTemplateParams);
+      case 'create_email_campaign_v2':
+        return this.createEmailCampaignV2(args);
+      case 'list_email_campaigns_v2':
+        return this.listEmailCampaignsV2(args);
+      case 'update_email_campaign_v2':
+        return this.updateEmailCampaignV2(args);
+      case 'delete_email_campaign_v2':
+        return this.deleteEmailCampaignV2(args);
+      case 'list_workflow_campaigns_v2':
+        return this.listWorkflowCampaignsV2(args);
+      case 'list_bulk_action_campaigns_v2':
+        return this.listBulkActionCampaignsV2(args);
+      case 'schedule_email_campaign_v2':
+        return this.scheduleEmailCampaignV2(args);
       default:
         throw new Error(`Unknown email tool: ${name}`);
     }
@@ -265,5 +460,100 @@ export class EmailTools {
     } catch (error) {
       throw new Error(`Failed to delete email template: ${error}`);
     }
+  }
+
+  private async createEmailCampaignV2(args: Record<string, unknown>): Promise<any> {
+    return this.ghlClient.makeRequest(
+      'POST',
+      `/emails/public/v2/locations/${this.locationId(args)}/campaigns/email-campaign`,
+      this.body(args)
+    );
+  }
+
+  private async listEmailCampaignsV2(args: Record<string, unknown>): Promise<any> {
+    const query = this.query(args, ['locationId', 'body', 'payload']);
+    const suffix = query ? `?${query}` : '';
+    return this.ghlClient.makeRequest(
+      'GET',
+      `/emails/public/v2/locations/${this.locationId(args)}/campaigns/emails${suffix}`
+    );
+  }
+
+  private async listWorkflowCampaignsV2(args: Record<string, unknown>): Promise<any> {
+    const query = this.query(args, ['locationId', 'body', 'payload']);
+    const suffix = query ? `?${query}` : '';
+    return this.ghlClient.makeRequest(
+      'GET',
+      `/emails/public/v2/locations/${this.locationId(args)}/campaigns/workflows${suffix}`
+    );
+  }
+
+  private async listBulkActionCampaignsV2(args: Record<string, unknown>): Promise<any> {
+    const query = this.query(args, ['locationId', 'body', 'payload']);
+    const suffix = query ? `?${query}` : '';
+    return this.ghlClient.makeRequest(
+      'GET',
+      `/emails/public/v2/locations/${this.locationId(args)}/campaigns/bulk-actions${suffix}`
+    );
+  }
+
+  private async updateEmailCampaignV2(args: Record<string, unknown>): Promise<any> {
+    return this.ghlClient.makeRequest(
+      'PATCH',
+      `/emails/public/v2/locations/${this.locationId(args)}/campaigns/${this.campaignId(args)}`,
+      this.body(args)
+    );
+  }
+
+  private async deleteEmailCampaignV2(args: Record<string, unknown>): Promise<any> {
+    return this.ghlClient.makeRequest(
+      'DELETE',
+      `/emails/public/v2/locations/${this.locationId(args)}/campaigns/${this.campaignId(args)}`
+    );
+  }
+
+  private async scheduleEmailCampaignV2(args: Record<string, unknown>): Promise<any> {
+    return this.ghlClient.makeRequest(
+      'POST',
+      `/emails/public/v2/locations/${this.locationId(args)}/campaigns/${this.campaignId(args)}/schedule`,
+      this.body(args)
+    );
+  }
+
+  private locationId(args: Record<string, unknown>): string {
+    const value = args.locationId || this.ghlClient.getConfig().locationId;
+    if (!value) throw new Error('locationId is required');
+    return encodeURIComponent(String(value));
+  }
+
+  private campaignId(args: Record<string, unknown>): string {
+    if (!args.campaignId) throw new Error('campaignId is required');
+    return encodeURIComponent(String(args.campaignId));
+  }
+
+  private body(args: Record<string, unknown>): Record<string, unknown> | undefined {
+    const explicit = args.body || args.payload;
+    if (explicit && typeof explicit === 'object' && !Array.isArray(explicit)) return explicit as Record<string, unknown>;
+
+    const excluded = new Set(['locationId', 'campaignId', 'body', 'payload']);
+    const body: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(args)) {
+      if (!excluded.has(key)) body[key] = value;
+    }
+    return Object.keys(body).length > 0 ? body : undefined;
+  }
+
+  private query(args: Record<string, unknown>, excludedKeys: string[]): string {
+    const excluded = new Set(excludedKeys);
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(args)) {
+      if (excluded.has(key) || value === undefined || value === null || value === '') continue;
+      if (Array.isArray(value)) {
+        for (const item of value) params.append(key, String(item));
+      } else {
+        params.append(key, String(value));
+      }
+    }
+    return params.toString();
   }
 } 

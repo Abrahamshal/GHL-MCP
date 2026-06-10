@@ -11,7 +11,7 @@ import type { GHLConfig } from './types/ghl-types.js';
 import { EnhancedGHLClient } from './enhanced-ghl-client.js';
 import { ToolRegistry as ToolRegistryClass } from './tool-registry.js';
 
-function toAnthropicTool(tool: Tool) {
+function toRouteToolDescriptor(tool: Tool) {
   const schema: Record<string, unknown> =
     (tool as any).inputSchema ?? (tool as any).input_schema ?? {};
 
@@ -33,8 +33,8 @@ export function registerExecuteRoutes(
 ): void {
   app.get('/tools', (_req, res) => {
     try {
-      const anthropicTools = defaultRegistry.getAllToolDefinitions().map(toAnthropicTool);
-      res.json({ tools: anthropicTools, count: anthropicTools.length });
+      const toolDescriptors = defaultRegistry.getAllToolDefinitions().map(toRouteToolDescriptor);
+      res.json({ tools: toolDescriptors, count: toolDescriptors.length });
     } catch (err: any) {
       console.error('[execute-route] GET /tools error:', err.message);
       res.status(500).json({ error: 'Failed to list tools' });

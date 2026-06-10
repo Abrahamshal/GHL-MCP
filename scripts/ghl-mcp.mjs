@@ -46,7 +46,7 @@ Commands:
   list-tools                 List MCP tools from the built registry
   test-tool <name> [json]    Execute one tool locally with JSON arguments
   env-template               Print a minimal .env template
-  configure <client>         Print MCP client config JSON for claude, cursor, windsurf, codex
+  configure <client>         Print MCP client config JSON for codex, cursor, windsurf
   update-api                 Refresh official GHL API scan and generated tools
   explorer                   Print the local static tool explorer path
   report                     Generate docs/API-DASHBOARD.md and docs/tool-inventory.json
@@ -55,6 +55,7 @@ Options:
   --json                     Emit JSON where supported
   --search <text>            Filter list-tools output
   --category <name>          Filter list-tools output by category/module
+  --stability <tier>         Filter by official, live-docs-supplemental, legacy-compatible, private-or-unstable, deprecated
   --confirm                  Allow test-tool to run write/destructive tools
 `;
 }
@@ -70,7 +71,7 @@ async function doctor() {
     check('coverage report', Boolean(coverage), 'docs/ghl-api-coverage.json'),
     check('GHL_API_KEY', Boolean(process.env.GHL_API_KEY), mask(process.env.GHL_API_KEY)),
     check('GHL_LOCATION_ID', Boolean(process.env.GHL_LOCATION_ID), process.env.GHL_LOCATION_ID || 'missing'),
-    check('GHL_API_VERSION', Boolean(process.env.GHL_API_VERSION || '2021-07-28'), process.env.GHL_API_VERSION || '2021-07-28'),
+    check('GHL_API_VERSION', Boolean(process.env.GHL_API_VERSION || '2023-02-21'), process.env.GHL_API_VERSION || '2023-02-21'),
   ];
 
   if (coverage) {
@@ -88,7 +89,7 @@ async function authCheck() {
   const apiKey = requireEnv('GHL_API_KEY');
   const locationId = requireEnv('GHL_LOCATION_ID');
   const baseUrl = process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com';
-  const version = process.env.GHL_API_VERSION || '2021-07-28';
+  const version = process.env.GHL_API_VERSION || '2023-02-21';
   const response = await fetch(`${baseUrl}/locations/${encodeURIComponent(locationId)}`, {
     method: 'GET',
     headers: {
@@ -112,6 +113,7 @@ async function listTools(argv) {
   const filtered = inventory.filter((tool) => {
     if (options.search && !`${tool.name} ${tool.description} ${tool.category}`.toLowerCase().includes(options.search.toLowerCase())) return false;
     if (options.category && tool.category !== options.category && tool.module !== options.category) return false;
+    if (options.stability && tool.stability !== options.stability) return false;
     return true;
   });
 
@@ -122,7 +124,7 @@ async function listTools(argv) {
 
   console.log(`Tools: ${filtered.length}`);
   for (const tool of filtered) {
-    const flags = [tool.access, tool.destructive ? 'destructive' : ''].filter(Boolean).join(', ');
+    const flags = [tool.access, tool.stability, tool.destructive ? 'destructive' : ''].filter(Boolean).join(', ');
     console.log(`${tool.name}  [${tool.category}; ${flags}]`);
   }
 }
@@ -152,13 +154,13 @@ function envTemplate() {
   console.log(`GHL_API_KEY=your_private_integration_api_key
 GHL_LOCATION_ID=your_location_id
 GHL_BASE_URL=https://services.leadconnectorhq.com
-GHL_API_VERSION=2021-07-28
+GHL_API_VERSION=2023-02-21
 MCP_SERVER_PORT=8000
 NODE_ENV=development`);
 }
 
 function configure(argv) {
-  const client = (argv[0] || 'claude').toLowerCase();
+  const client = (argv[0] || 'codex').toLowerCase();
   const config = {
     mcpServers: {
       ghl: {
@@ -168,14 +170,14 @@ function configure(argv) {
           GHL_API_KEY: '${GHL_API_KEY}',
           GHL_LOCATION_ID: '${GHL_LOCATION_ID}',
           GHL_BASE_URL: process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com',
-          GHL_API_VERSION: process.env.GHL_API_VERSION || '2021-07-28',
+          GHL_API_VERSION: process.env.GHL_API_VERSION || '2023-02-21',
         },
       },
     },
   };
 
-  if (!['claude', 'cursor', 'windsurf', 'codex'].includes(client)) {
-    fail('Supported clients: claude, cursor, windsurf, codex');
+  if (!['codex', 'cursor', 'windsurf'].includes(client)) {
+    fail('Supported clients: codex, cursor, windsurf');
   }
   console.log(JSON.stringify(config, null, 2));
 }
@@ -202,6 +204,7 @@ async function report() {
   const inventory = await getInventory();
   const byCategory = countBy(inventory, 'category');
   const byAccess = countBy(inventory, 'access');
+  const byStability = countBy(inventory, 'stability');
   const officialCommit = coverage.official?.commit || 'unknown';
   const shortCommit = coverage.official?.tag || officialCommit.slice(0, 7);
   const generatedFrom = {
@@ -236,6 +239,14 @@ Generated from official GHL docs commit: ${shortCommit}
 - Delete/destructive tools: ${(byAccess.delete || 0)}
 - Local-only endpoint references tracked: ${coverage.comparison?.localOnly?.length || 0}
 
+## Stability Tiers
+
+- Official OpenAPI tools: ${byStability.official || 0}
+- Live-docs supplemental tools: ${byStability['live-docs-supplemental'] || 0}
+- Legacy-compatible tools: ${byStability['legacy-compatible'] || 0}
+- Private/internal unstable tools: ${byStability['private-or-unstable'] || 0}
+- Deprecated/compatibility tools: ${byStability.deprecated || 0}
+
 ## Largest Tool Categories
 
 | Category | Tools |
@@ -266,7 +277,7 @@ async function getInventory() {
   const client = new EnhancedGHLClient({
     accessToken: process.env.GHL_API_KEY || 'tooling-token',
     baseUrl: process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com',
-    version: process.env.GHL_API_VERSION || '2021-07-28',
+    version: process.env.GHL_API_VERSION || '2023-02-21',
     locationId: process.env.GHL_LOCATION_ID || 'tooling-location',
   });
   return new ToolRegistry(client).getToolInventory();
@@ -287,7 +298,7 @@ function readGhlConfig() {
   return {
     accessToken: requireEnv('GHL_API_KEY'),
     baseUrl: process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com',
-    version: process.env.GHL_API_VERSION || '2021-07-28',
+    version: process.env.GHL_API_VERSION || '2023-02-21',
     locationId: requireEnv('GHL_LOCATION_ID'),
   };
 }
@@ -327,6 +338,7 @@ function parseOptions(argv) {
     if (item === '--check') options.check = true;
     if (item === '--search') options.search = argv[++i] || '';
     if (item === '--category') options.category = argv[++i] || '';
+    if (item === '--stability') options.stability = argv[++i] || '';
   }
   return options;
 }

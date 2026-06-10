@@ -29,6 +29,10 @@ const endpoints = missingWithoutGenerated.map((endpoint) => ({
   operationId: endpoint.operationId || '',
   versions: endpoint.versions || [],
   scopes: endpoint.scopes || [],
+  sourceFile: endpoint.sourceFile || '',
+  source: endpoint.sourceFile?.startsWith('live-docs:') ? 'live-ghl-docs' : 'official-ghl-openapi',
+  stability: endpoint.sourceFile?.startsWith('live-docs:') ? 'live-docs-supplemental' : isDeprecatedOfficialEndpoint(endpoint) ? 'deprecated' : 'official',
+  deprecated: isDeprecatedOfficialEndpoint(endpoint),
   pathParams: getPathParams(endpoint.path),
   queryParams: getParams(endpoint, 'query'),
   requestBodySchema: getRequestBodySchema(endpoint),
@@ -61,6 +65,10 @@ interface OfficialEndpoint {
   operationId: string;
   versions: string[];
   scopes: string[];
+  sourceFile: string;
+  source: string;
+  stability: string;
+  deprecated?: boolean;
   pathParams: string[];
   queryParams: Array<{
     name: string;
@@ -80,9 +88,13 @@ export class OfficialSpecTools {
     return ENDPOINTS.map((endpoint) => ({
       name: endpoint.name,
       description: [
+        endpoint.deprecated ? 'Deprecated compatibility endpoint.' : '',
+        endpoint.stability === 'live-docs-supplemental' ? 'Live-docs supplemental endpoint.' : '',
         endpoint.summary,
         \`Official GHL API endpoint: \${endpoint.method} \${endpoint.path}.\`,
+        endpoint.versions.length ? \`Version: \${endpoint.versions[0]}.\` : '',
         endpoint.scopes.length ? \`Scopes: \${endpoint.scopes.join(', ')}.\` : '',
+        endpoint.queryParams.some((param) => param.name === 'locationId') ? 'Uses configured locationId when omitted.' : '',
       ].filter(Boolean).join(' '),
       inputSchema: this.buildInputSchema(endpoint),
       _meta: {
@@ -90,15 +102,18 @@ export class OfficialSpecTools {
           category: \`official-\${endpoint.app}\`,
           access: endpoint.method === 'GET' ? 'read' : endpoint.method === 'DELETE' ? 'delete' : 'write',
           complexity: 'generated',
-          source: 'official-ghl-openapi',
+          source: endpoint.source,
+          stability: endpoint.stability,
         },
         official: {
           app: endpoint.app,
+          sourceFile: endpoint.sourceFile,
           operationId: endpoint.operationId,
           method: endpoint.method,
           path: endpoint.path,
           versions: endpoint.versions,
           scopes: endpoint.scopes,
+          deprecated: endpoint.deprecated || undefined,
         },
       },
     }));
@@ -271,11 +286,16 @@ function dedupeToolNames(items) {
   }
 }
 
+function isDeprecatedOfficialEndpoint(endpoint) {
+  return endpoint.method === 'GET' && endpoint.path === '/users/';
+}
+
 function getPathParams(path) {
   return [...path.matchAll(/\{([^}]+)\}/g)].map((match) => match[1]);
 }
 
 function getOperation(endpoint) {
+  if (!endpoint.sourceFile || !endpoint.sourceFile.endsWith('.json')) return undefined;
   const specPath = join(repoRoot, 'tmp', 'highlevel-api-docs', endpoint.sourceFile);
   const spec = JSON.parse(readFileSync(specPath, 'utf8'));
   return spec.paths?.[endpoint.path]?.[endpoint.method.toLowerCase()];

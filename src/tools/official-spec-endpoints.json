@@ -12,6 +12,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -100,6 +104,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "campaignId"
     ],
@@ -143,6 +151,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -212,6 +224,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -237,6 +253,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -270,6 +290,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "pageId"
     ],
@@ -309,6 +333,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "pageId"
     ],
@@ -336,6 +364,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "pageId"
     ],
@@ -357,6 +389,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -414,6 +450,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adAccountId"
     ],
@@ -441,6 +481,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adAccountId"
     ],
@@ -462,6 +506,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -487,6 +535,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -506,6 +558,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -525,6 +581,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -550,6 +610,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -567,6 +631,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -608,6 +676,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "campaignId"
     ],
@@ -629,6 +701,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -662,6 +738,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -711,6 +791,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -730,6 +814,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -788,6 +876,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "audienceId"
     ],
@@ -815,6 +907,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "audienceId"
     ],
@@ -836,6 +932,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "audienceId"
     ],
@@ -863,6 +963,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "audienceId"
     ],
@@ -884,6 +988,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "audienceId"
     ],
@@ -905,6 +1013,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "audienceId"
     ],
@@ -926,6 +1038,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -954,6 +1070,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "leadFormId"
     ],
@@ -981,6 +1101,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "campaignId"
     ],
@@ -1024,6 +1148,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -1122,6 +1250,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -1141,6 +1273,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -1160,6 +1296,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -1179,6 +1319,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "campaignId"
     ],
@@ -1200,6 +1344,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "campaignId"
     ],
@@ -1221,6 +1369,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "campaignId"
     ],
@@ -1242,6 +1394,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "campaignId"
     ],
@@ -1263,6 +1419,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adsetId"
     ],
@@ -1284,6 +1444,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adsetId"
     ],
@@ -1305,6 +1469,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adsetId"
     ],
@@ -1323,6 +1491,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adsetId"
     ],
@@ -1344,6 +1516,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adId"
     ],
@@ -1365,6 +1541,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adId"
     ],
@@ -1386,6 +1566,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adId"
     ],
@@ -1404,6 +1588,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adId"
     ],
@@ -1425,6 +1613,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -1512,6 +1704,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -1581,6 +1777,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "campaignId"
     ],
@@ -1624,6 +1824,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -1693,6 +1897,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -1712,6 +1920,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "conversionId"
     ],
@@ -1739,6 +1951,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "conversionId"
     ],
@@ -1766,6 +1982,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -1791,6 +2011,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -1810,6 +2034,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -1835,6 +2063,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -1872,6 +2104,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adAccountId"
     ],
@@ -1899,6 +2135,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adAccountId"
     ],
@@ -1920,6 +2160,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adId"
     ],
@@ -1938,6 +2182,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -1979,6 +2227,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2007,6 +2259,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2063,6 +2319,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -2082,6 +2342,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2180,6 +2444,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2225,6 +2493,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2258,6 +2530,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2300,6 +2576,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "segmentId"
     ],
@@ -2339,6 +2619,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "segmentId"
     ],
@@ -2378,6 +2662,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -2397,6 +2685,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -2416,6 +2708,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2441,6 +2737,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "audienceId"
     ],
@@ -2468,6 +2768,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -2487,6 +2791,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adId"
     ],
@@ -2514,6 +2822,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2539,6 +2851,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2564,6 +2880,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -2583,6 +2903,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2608,6 +2932,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2641,6 +2969,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2674,6 +3006,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2699,6 +3035,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adId"
     ],
@@ -2726,6 +3066,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adId"
     ],
@@ -2747,6 +3091,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -2766,6 +3114,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2815,6 +3167,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "accountId"
     ],
@@ -2842,6 +3198,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "accountId"
     ],
@@ -2872,6 +3232,10 @@
     "scopes": [
       "adPublishing.write"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "adId"
     ],
@@ -2902,6 +3266,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -2991,6 +3359,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -3067,6 +3439,10 @@
     "scopes": [
       "adPublishing.readonly"
     ],
+    "sourceFile": "apps/ad-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "campaignGroupId"
     ],
@@ -3129,6 +3505,10 @@
     "scopes": [
       "affiliate-manager.readonly"
     ],
+    "sourceFile": "apps/affiliate-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -3201,6 +3581,10 @@
     "scopes": [
       "affiliate-manager.readonly"
     ],
+    "sourceFile": "apps/affiliate-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "affiliateId"
@@ -3220,6 +3604,10 @@
     "scopes": [
       "affiliate-manager.readonly"
     ],
+    "sourceFile": "apps/affiliate-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -3301,6 +3689,10 @@
     "scopes": [
       "affiliate-manager.readonly"
     ],
+    "sourceFile": "apps/affiliate-manager.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -3383,6 +3775,10 @@
     "scopes": [
       "agent-studio.readonly"
     ],
+    "sourceFile": "apps/agent-studio.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -3436,6 +3832,10 @@
     "scopes": [
       "agent-studio.write"
     ],
+    "sourceFile": "apps/agent-studio.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "versionId"
     ],
@@ -3465,6 +3865,10 @@
     "scopes": [
       "agent-studio.write"
     ],
+    "sourceFile": "apps/agent-studio.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId"
     ],
@@ -3494,6 +3898,10 @@
     "scopes": [
       "agent-studio.readonly"
     ],
+    "sourceFile": "apps/agent-studio.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -3539,6 +3947,10 @@
     "scopes": [
       "agent-studio.readonly"
     ],
+    "sourceFile": "apps/agent-studio.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId"
     ],
@@ -3572,6 +3984,10 @@
     "scopes": [
       "agent-studio.write"
     ],
+    "sourceFile": "apps/agent-studio.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId"
     ],
@@ -3601,6 +4017,10 @@
     "scopes": [
       "brand-boards/design-kit.readonly"
     ],
+    "sourceFile": "apps/brand-boards.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -3656,6 +4076,10 @@
     "scopes": [
       "brand-boards/design-kit.readonly"
     ],
+    "sourceFile": "apps/brand-boards.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "id"
@@ -3675,6 +4099,10 @@
     "scopes": [
       "brand-boards/design-kit.write"
     ],
+    "sourceFile": "apps/brand-boards.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "id"
@@ -3697,6 +4125,10 @@
     "scopes": [
       "brand-boards/design-kit.write"
     ],
+    "sourceFile": "apps/brand-boards.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "id"
@@ -3716,6 +4148,10 @@
     "scopes": [
       "brand-boards/design-kit.write"
     ],
+    "sourceFile": "apps/brand-boards.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -3735,6 +4171,10 @@
     "scopes": [
       "calendars/groups.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -3754,6 +4194,10 @@
     "scopes": [
       "calendars/groups.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "groupId"
     ],
@@ -3775,6 +4219,10 @@
     "scopes": [
       "calendars/events.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -3794,6 +4242,10 @@
     "scopes": [
       "calendars/events.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "eventId"
     ],
@@ -3815,6 +4267,10 @@
     "scopes": [
       "calendars/events.readonly"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "appointmentId"
     ],
@@ -3852,6 +4308,10 @@
     "scopes": [
       "calendars/events.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "appointmentId"
     ],
@@ -3873,6 +4333,10 @@
     "scopes": [
       "calendars/events.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "appointmentId",
       "noteId"
@@ -3895,6 +4359,10 @@
     "scopes": [
       "calendars/events.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "appointmentId",
       "noteId"
@@ -3914,6 +4382,10 @@
     "scopes": [
       "calendars.readonly"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -3976,6 +4448,10 @@
     "scopes": [
       "calendars.readonly"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "id"
     ],
@@ -3994,6 +4470,10 @@
     "scopes": [
       "calendars.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "id"
     ],
@@ -4015,6 +4495,10 @@
     "scopes": [
       "calendars.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "id"
     ],
@@ -4033,6 +4517,10 @@
     "scopes": [
       "calendars.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -4052,6 +4540,10 @@
     "scopes": [
       "calendars.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "id",
       "calendarId"
@@ -4071,6 +4563,10 @@
     "scopes": [
       "calendars.write"
     ],
+    "sourceFile": "apps/calendars.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "id",
       "calendarId"
@@ -4090,6 +4586,10 @@
     "scopes": [
       "campaigns.readonly"
     ],
+    "sourceFile": "apps/campaigns.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -4119,6 +4619,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/contacts.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "type"
     ],
@@ -4138,6 +4642,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/contacts.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -4157,6 +4665,10 @@
     "scopes": [
       "contacts.write"
     ],
+    "sourceFile": "apps/contacts.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "contactId"
     ],
@@ -4175,6 +4687,10 @@
     "scopes": [
       "contacts.readonly"
     ],
+    "sourceFile": "apps/contacts.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -4233,6 +4749,10 @@
     "scopes": [
       "conversation-ai.write"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId"
     ],
@@ -4254,6 +4774,10 @@
     "scopes": [
       "conversation-ai.readonly"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId"
     ],
@@ -4272,6 +4796,10 @@
     "scopes": [
       "conversation-ai.readonly"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId",
       "actionId"
@@ -4291,6 +4819,10 @@
     "scopes": [
       "conversation-ai.write"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId",
       "actionId"
@@ -4313,6 +4845,10 @@
     "scopes": [
       "conversation-ai.write"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId",
       "actionId"
@@ -4332,6 +4868,10 @@
     "scopes": [
       "conversation-ai.write"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId"
     ],
@@ -4353,6 +4893,10 @@
     "scopes": [
       "conversation-ai.write"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -4372,6 +4916,10 @@
     "scopes": [
       "conversation-ai.readonly"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -4413,6 +4961,10 @@
     "scopes": [
       "conversation-ai.write"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId"
     ],
@@ -4434,6 +4986,10 @@
     "scopes": [
       "conversation-ai.readonly"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId"
     ],
@@ -4452,6 +5008,10 @@
     "scopes": [
       "conversation-ai.write"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "agentId"
     ],
@@ -4470,6 +5030,10 @@
     "scopes": [
       "conversation-ai.readonly"
     ],
+    "sourceFile": "apps/conversation-ai.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -4504,6 +5068,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/conversations.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -4527,6 +5095,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/conversations.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -4553,6 +5125,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/conversations.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "id"
     ],
@@ -4581,6 +5157,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/conversations.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -4620,6 +5200,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/conversations.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -4639,6 +5223,10 @@
     "scopes": [
       "conversations/message.readonly"
     ],
+    "sourceFile": "apps/conversations.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -4757,6 +5345,10 @@
     "scopes": [
       "conversations/message.write"
     ],
+    "sourceFile": "apps/conversations.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -4776,6 +5368,10 @@
     "scopes": [
       "conversations/message.write"
     ],
+    "sourceFile": "apps/conversations.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -4795,6 +5391,10 @@
     "scopes": [
       "conversations/message.write"
     ],
+    "sourceFile": "apps/conversations.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -4814,6 +5414,10 @@
     "scopes": [
       "conversations/message.write"
     ],
+    "sourceFile": "apps/conversations.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "messageId"
     ],
@@ -4833,6 +5437,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/courses.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -4852,6 +5460,10 @@
     "scopes": [
       "custom-menu-link.readonly"
     ],
+    "sourceFile": "apps/custom-menus.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -4913,6 +5525,10 @@
     "scopes": [
       "funnels/redirect.write"
     ],
+    "sourceFile": "apps/funnels.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -4932,6 +5548,10 @@
     "scopes": [
       "funnels/redirect.write"
     ],
+    "sourceFile": "apps/funnels.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "id"
     ],
@@ -4953,6 +5573,10 @@
     "scopes": [
       "funnels/redirect.write"
     ],
+    "sourceFile": "apps/funnels.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "id"
     ],
@@ -4979,6 +5603,10 @@
     "scopes": [
       "funnels/redirect.readonly"
     ],
+    "sourceFile": "apps/funnels.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5020,6 +5648,10 @@
     "operationId": "getFunnels",
     "versions": [],
     "scopes": [],
+    "sourceFile": "apps/funnels.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5082,6 +5714,10 @@
     "operationId": "getPagesByFunnelId",
     "versions": [],
     "scopes": [],
+    "sourceFile": "apps/funnels.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5130,6 +5766,10 @@
     "operationId": "getPagesCountByFunnelId",
     "versions": [],
     "scopes": [],
+    "sourceFile": "apps/funnels.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5168,6 +5808,10 @@
     "scopes": [
       "invoices.readonly"
     ],
+    "sourceFile": "apps/invoices.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5201,6 +5845,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5249,6 +5897,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -5266,6 +5918,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "id"
     ],
@@ -5285,6 +5941,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "id"
     ],
@@ -5301,6 +5961,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5356,6 +6020,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -5373,6 +6041,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -5390,6 +6062,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5429,6 +6105,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -5446,6 +6126,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "knowledgeBaseId"
     ],
@@ -5462,6 +6146,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "knowledgeBaseId"
     ],
@@ -5478,6 +6166,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "id"
     ],
@@ -5497,6 +6189,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5544,6 +6240,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/knowledge-base.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -5561,6 +6261,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/links.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "linkId"
     ],
@@ -5588,6 +6292,10 @@
     "scopes": [
       "locations.readonly"
     ],
+    "sourceFile": "apps/locations.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -5604,6 +6312,10 @@
     "scopes": [
       "charges.readonly"
     ],
+    "sourceFile": "apps/marketplace.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5677,6 +6389,10 @@
     "scopes": [
       "marketplace-installer-details.readonly"
     ],
+    "sourceFile": "apps/marketplace.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "appId"
     ],
@@ -5695,6 +6411,10 @@
     "scopes": [
       "oauth.readonly"
     ],
+    "sourceFile": "apps/marketplace.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "appId",
       "locationId"
@@ -5714,6 +6434,10 @@
     "scopes": [
       "marketplace-external-auth-migration.write"
     ],
+    "sourceFile": "apps/marketplace.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -5729,6 +6453,10 @@
     "operationId": "get-access-token",
     "versions": [],
     "scopes": [],
+    "sourceFile": "apps/oauth.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": []
   },
@@ -5745,6 +6473,10 @@
     "scopes": [
       "opportunities.readonly"
     ],
+    "sourceFile": "apps/opportunities.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5820,6 +6552,10 @@
     "scopes": [
       "opportunities.readonly"
     ],
+    "sourceFile": "apps/opportunities.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -5839,6 +6575,10 @@
     "scopes": [
       "payments/custom-provider.write"
     ],
+    "sourceFile": "apps/payments.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [],
     "requestBodySchema": {
@@ -5858,6 +6598,10 @@
     "scopes": [
       "numberpools.read"
     ],
+    "sourceFile": "apps/phone-system.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -5883,6 +6627,10 @@
     "scopes": [
       "phonenumbers.read"
     ],
+    "sourceFile": "apps/phone-system.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -5966,6 +6714,10 @@
     "scopes": [
       "phonenumbers.write"
     ],
+    "sourceFile": "apps/phone-system.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -5985,6 +6737,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/products.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "storeId"
     ],
@@ -6004,6 +6760,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -6023,6 +6783,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "companyId"
     ],
@@ -6042,6 +6806,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -6061,6 +6829,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -6080,6 +6852,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "companyId"
     ],
@@ -6099,6 +6875,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "companyId"
     ],
@@ -6115,6 +6895,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -6140,6 +6924,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "companyId"
     ],
@@ -6159,6 +6947,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "companyId"
     ],
@@ -6184,6 +6976,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "planId"
     ],
@@ -6209,6 +7005,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -6245,6 +7045,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -6264,6 +7068,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "companyId"
     ],
@@ -6283,6 +7091,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -6302,6 +7114,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -6321,6 +7137,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "companyId"
     ],
@@ -6340,6 +7160,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "companyId"
     ],
@@ -6356,6 +7180,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -6380,6 +7208,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "companyId"
     ],
@@ -6399,6 +7231,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "companyId"
     ],
@@ -6423,6 +7259,10 @@
       "2021-04-15"
     ],
     "scopes": [],
+    "sourceFile": "apps/saas-api.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "planId"
     ],
@@ -6447,6 +7287,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/snapshots.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "snapshotId"
     ],
@@ -6500,6 +7344,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/snapshots.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "snapshotId",
       "locationId"
@@ -6527,6 +7375,10 @@
     "scopes": [
       "socialplanner/oauth.readonly"
     ],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -6574,6 +7426,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -6591,6 +7447,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -6611,6 +7471,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -6658,6 +7522,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -6675,6 +7543,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -6697,6 +7569,10 @@
     "scopes": [
       "socialplanner/oauth.readonly"
     ],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -6744,6 +7620,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -6761,6 +7641,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -6781,6 +7665,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -6828,6 +7716,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -6845,6 +7737,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -6867,6 +7763,10 @@
     "scopes": [
       "socialplanner/oauth.readonly"
     ],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -6914,6 +7814,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -6931,6 +7835,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -6953,6 +7861,10 @@
     "scopes": [
       "socialplanner/oauth.readonly"
     ],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -7000,6 +7912,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -7017,6 +7933,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -7039,6 +7959,10 @@
     "scopes": [
       "socialplanner/oauth.readonly"
     ],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -7086,6 +8010,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "accountId"
@@ -7105,6 +8033,10 @@
     "scopes": [
       "socialplanner/category.readonly"
     ],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -7146,6 +8078,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId",
       "id"
@@ -7163,6 +8099,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -7204,6 +8144,10 @@
       "2021-07-28"
     ],
     "scopes": [],
+    "sourceFile": "apps/social-media-posting.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [
       "locationId"
     ],
@@ -7225,6 +8169,10 @@
     "scopes": [
       "surveys.readonly"
     ],
+    "sourceFile": "apps/surveys.json",
+    "source": "official-ghl-openapi",
+    "stability": "official",
+    "deprecated": false,
     "pathParams": [],
     "queryParams": [
       {
@@ -7299,6 +8247,10 @@
     "scopes": [
       "users.readonly"
     ],
+    "sourceFile": "apps/users.json",
+    "source": "official-ghl-openapi",
+    "stability": "deprecated",
+    "deprecated": true,
     "pathParams": [],
     "queryParams": [
       {
@@ -7309,5 +8261,149 @@
         }
       }
     ]
+  },
+  {
+    "name": "official_emails_create_email_template_v2",
+    "method": "POST",
+    "path": "/emails/public/v2/locations/{locationId}/templates",
+    "app": "emails",
+    "summary": "Create Email Template V2",
+    "operationId": "create-email-template-v2",
+    "versions": [
+      "2023-02-21"
+    ],
+    "scopes": [],
+    "sourceFile": "live-docs:ghl/emails/create-email-template-v-2",
+    "source": "live-ghl-docs",
+    "stability": "live-docs-supplemental",
+    "deprecated": false,
+    "pathParams": [
+      "locationId"
+    ],
+    "queryParams": []
+  },
+  {
+    "name": "official_emails_list_email_templates_v2",
+    "method": "GET",
+    "path": "/emails/public/v2/locations/{locationId}/templates",
+    "app": "emails",
+    "summary": "List Email Templates V2",
+    "operationId": "list-email-templates-v2",
+    "versions": [
+      "2023-02-21"
+    ],
+    "scopes": [],
+    "sourceFile": "live-docs:ghl/emails/list-email-templates-v-2",
+    "source": "live-ghl-docs",
+    "stability": "live-docs-supplemental",
+    "deprecated": false,
+    "pathParams": [
+      "locationId"
+    ],
+    "queryParams": []
+  },
+  {
+    "name": "official_emails_import_email_template_v2",
+    "method": "POST",
+    "path": "/emails/public/v2/locations/{locationId}/templates/import",
+    "app": "emails",
+    "summary": "Import Email Template V2",
+    "operationId": "import-email-template-v2",
+    "versions": [
+      "2023-02-21"
+    ],
+    "scopes": [],
+    "sourceFile": "live-docs:ghl/emails/import-email-template-v-2",
+    "source": "live-ghl-docs",
+    "stability": "live-docs-supplemental",
+    "deprecated": false,
+    "pathParams": [
+      "locationId"
+    ],
+    "queryParams": []
+  },
+  {
+    "name": "official_emails_create_template_folder_v2",
+    "method": "POST",
+    "path": "/emails/public/v2/locations/{locationId}/templates/folders",
+    "app": "emails",
+    "summary": "Create Email Template Folder V2",
+    "operationId": "create-template-folder-v2",
+    "versions": [
+      "2023-02-21"
+    ],
+    "scopes": [],
+    "sourceFile": "live-docs:ghl/emails/create-template-folder-v-2",
+    "source": "live-ghl-docs",
+    "stability": "live-docs-supplemental",
+    "deprecated": false,
+    "pathParams": [
+      "locationId"
+    ],
+    "queryParams": []
+  },
+  {
+    "name": "official_emails_delete_email_template_v2",
+    "method": "DELETE",
+    "path": "/emails/public/v2/locations/{locationId}/templates/{templateId}",
+    "app": "emails",
+    "summary": "Delete Email Template V2",
+    "operationId": "delete-email-template-v2",
+    "versions": [
+      "2023-02-21"
+    ],
+    "scopes": [],
+    "sourceFile": "live-docs:ghl/emails/delete-email-template-v-2",
+    "source": "live-ghl-docs",
+    "stability": "live-docs-supplemental",
+    "deprecated": false,
+    "pathParams": [
+      "locationId",
+      "templateId"
+    ],
+    "queryParams": []
+  },
+  {
+    "name": "official_emails_update_email_template_v2",
+    "method": "PATCH",
+    "path": "/emails/public/v2/locations/{locationId}/templates/{templateId}",
+    "app": "emails",
+    "summary": "Update Email Template V2",
+    "operationId": "update-email-template-v2",
+    "versions": [
+      "2023-02-21"
+    ],
+    "scopes": [],
+    "sourceFile": "live-docs:ghl/emails/update-email-template-v-2",
+    "source": "live-ghl-docs",
+    "stability": "live-docs-supplemental",
+    "deprecated": false,
+    "pathParams": [
+      "locationId",
+      "templateId"
+    ],
+    "queryParams": []
+  },
+  {
+    "name": "official_emails_get_campaign_stats_v2",
+    "method": "GET",
+    "path": "/emails/public/v2/locations/{locationId}/campaigns/stats/{source}/{sourceId}",
+    "app": "emails",
+    "summary": "Get Campaign Statistics V2",
+    "operationId": "get-campaign-stats-v2",
+    "versions": [
+      "2023-02-21"
+    ],
+    "scopes": [],
+    "sourceFile": "live-docs:ghl/emails/get-campaign-stats-under-campaigns-v-2",
+    "source": "live-ghl-docs",
+    "stability": "live-docs-supplemental",
+    "deprecated": false,
+    "pathParams": [
+      "locationId",
+      "source",
+      "sourceId"
+    ],
+    "queryParams": []
   }
 ]

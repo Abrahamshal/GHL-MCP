@@ -1,8 +1,8 @@
 {
   "official": {
     "repo": "https://github.com/GoHighLevel/highlevel-api-docs.git",
-    "commit": "192cd68b065a7423c543d82721eb8644cdc883c7",
-    "tag": "192cd68",
+    "commit": "ae4d260aada8e4340e1603a5573f977778e13ffd",
+    "tag": "ae4d260",
     "endpoints": [
       {
         "key": "GET /ad-publishing/facebook/reporting",
@@ -8883,6 +8883,202 @@
           "workflows.readonly"
         ],
         "sourceFile": "apps/workflows.json"
+      },
+      {
+        "key": "POST /emails/public/v2/locations/{}/campaigns/email-campaign",
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/email-campaign",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/email-campaign",
+        "app": "emails",
+        "operationId": "create-email-campaign-v2",
+        "summary": "Create Email Campaign V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/create-email-campaign-v-2"
+      },
+      {
+        "key": "GET /emails/public/v2/locations/{}/campaigns/emails",
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/emails",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/emails",
+        "app": "emails",
+        "operationId": "list-email-campaigns-v2",
+        "summary": "List Email Campaigns V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/list-email-campaigns-v-2"
+      },
+      {
+        "key": "PATCH /emails/public/v2/locations/{}/campaigns/{}",
+        "method": "PATCH",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/{campaignId}",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/{}",
+        "app": "emails",
+        "operationId": "update-email-campaign-v2",
+        "summary": "Update Email Campaign V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/update-email-campaign-v-2"
+      },
+      {
+        "key": "DELETE /emails/public/v2/locations/{}/campaigns/{}",
+        "method": "DELETE",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/{campaignId}",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/{}",
+        "app": "emails",
+        "operationId": "delete-email-campaign-v2",
+        "summary": "Delete Email Campaign V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/delete-campaign-v-2"
+      },
+      {
+        "key": "GET /emails/public/v2/locations/{}/campaigns/workflows",
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/workflows",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/workflows",
+        "app": "emails",
+        "operationId": "list-workflow-campaigns-v2",
+        "summary": "List Workflow Campaigns V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/list-workflow-campaigns-v-2"
+      },
+      {
+        "key": "GET /emails/public/v2/locations/{}/campaigns/bulk-actions",
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/bulk-actions",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/bulk-actions",
+        "app": "emails",
+        "operationId": "list-bulk-action-campaigns-v2",
+        "summary": "List Bulk Action Campaigns V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/list-bulk-action-campaigns-v-2"
+      },
+      {
+        "key": "POST /emails/public/v2/locations/{}/campaigns/{}/schedule",
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/{campaignId}/schedule",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/{}/schedule",
+        "app": "emails",
+        "operationId": "schedule-email-campaign-v2",
+        "summary": "Schedule Campaign V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/schedule-campaign-v-2"
+      },
+      {
+        "key": "POST /emails/public/v2/locations/{}/templates",
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/templates",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates",
+        "app": "emails",
+        "operationId": "create-email-template-v2",
+        "summary": "Create Email Template V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/create-email-template-v-2"
+      },
+      {
+        "key": "GET /emails/public/v2/locations/{}/templates",
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/templates",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates",
+        "app": "emails",
+        "operationId": "list-email-templates-v2",
+        "summary": "List Email Templates V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/list-email-templates-v-2"
+      },
+      {
+        "key": "POST /emails/public/v2/locations/{}/templates/import",
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/templates/import",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates/import",
+        "app": "emails",
+        "operationId": "import-email-template-v2",
+        "summary": "Import Email Template V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/import-email-template-v-2"
+      },
+      {
+        "key": "POST /emails/public/v2/locations/{}/templates/folders",
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/templates/folders",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates/folders",
+        "app": "emails",
+        "operationId": "create-template-folder-v2",
+        "summary": "Create Email Template Folder V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/create-template-folder-v-2"
+      },
+      {
+        "key": "DELETE /emails/public/v2/locations/{}/templates/{}",
+        "method": "DELETE",
+        "path": "/emails/public/v2/locations/{locationId}/templates/{templateId}",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates/{}",
+        "app": "emails",
+        "operationId": "delete-email-template-v2",
+        "summary": "Delete Email Template V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/delete-email-template-v-2"
+      },
+      {
+        "key": "PATCH /emails/public/v2/locations/{}/templates/{}",
+        "method": "PATCH",
+        "path": "/emails/public/v2/locations/{locationId}/templates/{templateId}",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates/{}",
+        "app": "emails",
+        "operationId": "update-email-template-v2",
+        "summary": "Update Email Template V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/update-email-template-v-2"
+      },
+      {
+        "key": "GET /emails/public/v2/locations/{}/campaigns/stats/{}/{}",
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/stats/{source}/{sourceId}",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/stats/{}/{}",
+        "app": "emails",
+        "operationId": "get-campaign-stats-v2",
+        "summary": "Get Campaign Statistics V2",
+        "versions": [
+          "2023-02-21"
+        ],
+        "scopes": [],
+        "sourceFile": "live-docs:ghl/emails/get-campaign-stats-under-campaigns-v-2"
       }
     ]
   },
@@ -11905,6 +12101,62 @@
         "caller": "makeRequest"
       },
       {
+        "key": "POST /emails/public/v2/locations/{}/campaigns/email-campaign",
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{param}/campaigns/email-campaign",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/email-campaign",
+        "sourceFile": "src/tools/email-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "GET /emails/public/v2/locations/{}/campaigns/emails",
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{param}/campaigns/emails",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/emails",
+        "sourceFile": "src/tools/email-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "GET /emails/public/v2/locations/{}/campaigns/workflows",
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{param}/campaigns/workflows",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/workflows",
+        "sourceFile": "src/tools/email-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "GET /emails/public/v2/locations/{}/campaigns/bulk-actions",
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{param}/campaigns/bulk-actions",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/bulk-actions",
+        "sourceFile": "src/tools/email-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "PATCH /emails/public/v2/locations/{}/campaigns/{}",
+        "method": "PATCH",
+        "path": "/emails/public/v2/locations/{param}/campaigns/{param}",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/{}",
+        "sourceFile": "src/tools/email-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "DELETE /emails/public/v2/locations/{}/campaigns/{}",
+        "method": "DELETE",
+        "path": "/emails/public/v2/locations/{param}/campaigns/{param}",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/{}",
+        "sourceFile": "src/tools/email-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "POST /emails/public/v2/locations/{}/campaigns/{}/schedule",
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{param}/campaigns/{param}/schedule",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/{}/schedule",
+        "sourceFile": "src/tools/email-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
         "key": "GET /forms",
         "method": "GET",
         "path": "/forms/",
@@ -13105,10 +13357,10 @@
         "caller": "makeRequest"
       },
       {
-        "key": "GET /surveys/{}{}",
+        "key": "GET /surveys/{}",
         "method": "GET",
-        "path": "/surveys/{param}{param}",
-        "normalizedPath": "/surveys/{}{}",
+        "path": "/surveys/{param}",
+        "normalizedPath": "/surveys/{}",
         "sourceFile": "src/tools/survey-tools.ts",
         "caller": "makeRequest"
       },
@@ -13121,10 +13373,10 @@
         "caller": "makeRequest"
       },
       {
-        "key": "DELETE /surveys/{}{}",
+        "key": "DELETE /surveys/{}",
         "method": "DELETE",
-        "path": "/surveys/{param}{param}",
-        "normalizedPath": "/surveys/{}{}",
+        "path": "/surveys/{param}",
+        "normalizedPath": "/surveys/{}",
         "sourceFile": "src/tools/survey-tools.ts",
         "caller": "makeRequest"
       },
@@ -13137,10 +13389,10 @@
         "caller": "makeRequest"
       },
       {
-        "key": "GET /surveys/{}/submissions/{}{}",
+        "key": "GET /surveys/{}/submissions/{}",
         "method": "GET",
-        "path": "/surveys/{param}/submissions/{param}{param}",
-        "normalizedPath": "/surveys/{}/submissions/{}{}",
+        "path": "/surveys/{param}/submissions/{param}",
+        "normalizedPath": "/surveys/{}/submissions/{}",
         "sourceFile": "src/tools/survey-tools.ts",
         "caller": "makeRequest"
       },
@@ -13609,10 +13861,10 @@
         "caller": "makeRequest"
       },
       {
-        "key": "GET /workflows/{}{}",
+        "key": "GET /workflows/{}",
         "method": "GET",
-        "path": "/workflows/{param}{param}",
-        "normalizedPath": "/workflows/{}{}",
+        "path": "/workflows/{param}",
+        "normalizedPath": "/workflows/{}",
         "sourceFile": "src/tools/workflow-tools.ts",
         "caller": "makeRequest"
       },
@@ -13625,10 +13877,10 @@
         "caller": "makeRequest"
       },
       {
-        "key": "DELETE /workflows/{}{}",
+        "key": "DELETE /workflows/{}",
         "method": "DELETE",
-        "path": "/workflows/{param}{param}",
-        "normalizedPath": "/workflows/{}{}",
+        "path": "/workflows/{param}",
+        "normalizedPath": "/workflows/{}",
         "sourceFile": "src/tools/workflow-tools.ts",
         "caller": "makeRequest"
       },
@@ -15551,14 +15803,70 @@
         "normalizedPath": "/users",
         "sourceFile": "src/tools/official-spec-endpoints.json",
         "caller": "official-spec-generated"
+      },
+      {
+        "key": "POST /emails/public/v2/locations/{}/templates",
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/templates",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates",
+        "sourceFile": "src/tools/official-spec-endpoints.json",
+        "caller": "official-spec-generated"
+      },
+      {
+        "key": "GET /emails/public/v2/locations/{}/templates",
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/templates",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates",
+        "sourceFile": "src/tools/official-spec-endpoints.json",
+        "caller": "official-spec-generated"
+      },
+      {
+        "key": "POST /emails/public/v2/locations/{}/templates/import",
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/templates/import",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates/import",
+        "sourceFile": "src/tools/official-spec-endpoints.json",
+        "caller": "official-spec-generated"
+      },
+      {
+        "key": "POST /emails/public/v2/locations/{}/templates/folders",
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/templates/folders",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates/folders",
+        "sourceFile": "src/tools/official-spec-endpoints.json",
+        "caller": "official-spec-generated"
+      },
+      {
+        "key": "DELETE /emails/public/v2/locations/{}/templates/{}",
+        "method": "DELETE",
+        "path": "/emails/public/v2/locations/{locationId}/templates/{templateId}",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates/{}",
+        "sourceFile": "src/tools/official-spec-endpoints.json",
+        "caller": "official-spec-generated"
+      },
+      {
+        "key": "PATCH /emails/public/v2/locations/{}/templates/{}",
+        "method": "PATCH",
+        "path": "/emails/public/v2/locations/{locationId}/templates/{templateId}",
+        "normalizedPath": "/emails/public/v2/locations/{}/templates/{}",
+        "sourceFile": "src/tools/official-spec-endpoints.json",
+        "caller": "official-spec-generated"
+      },
+      {
+        "key": "GET /emails/public/v2/locations/{}/campaigns/stats/{}/{}",
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/stats/{source}/{sourceId}",
+        "normalizedPath": "/emails/public/v2/locations/{}/campaigns/stats/{}/{}",
+        "sourceFile": "src/tools/official-spec-endpoints.json",
+        "caller": "official-spec-generated"
       }
     ],
-    "filesScanned": 58
+    "filesScanned": 59
   },
   "comparison": {
-    "coveredCount": 576,
-    "officialUniqueCount": 576,
-    "localUniqueCount": 829,
+    "coveredCount": 590,
+    "officialUniqueCount": 590,
+    "localUniqueCount": 843,
     "coveragePercent": 100,
     "missingOfficial": [],
     "localOnly": [
@@ -15779,10 +16087,10 @@
         "caller": "makeRequest"
       },
       {
-        "key": "DELETE /surveys/{}{}",
+        "key": "DELETE /surveys/{}",
         "method": "DELETE",
-        "path": "/surveys/{param}{param}",
-        "normalizedPath": "/surveys/{}{}",
+        "path": "/surveys/{param}",
+        "normalizedPath": "/surveys/{}",
         "sourceFile": "src/tools/survey-tools.ts",
         "caller": "makeRequest"
       },
@@ -15843,10 +16151,10 @@
         "caller": "makeRequest"
       },
       {
-        "key": "DELETE /workflows/{}{}",
+        "key": "DELETE /workflows/{}",
         "method": "DELETE",
-        "path": "/workflows/{param}{param}",
-        "normalizedPath": "/workflows/{}{}",
+        "path": "/workflows/{param}",
+        "normalizedPath": "/workflows/{}",
         "sourceFile": "src/tools/workflow-tools.ts",
         "caller": "makeRequest"
       },
@@ -16643,6 +16951,14 @@
         "caller": "makeRequest"
       },
       {
+        "key": "GET /surveys/{}",
+        "method": "GET",
+        "path": "/surveys/{param}",
+        "normalizedPath": "/surveys/{}",
+        "sourceFile": "src/tools/survey-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
         "key": "GET /surveys/{}/stats${qs ",
         "method": "GET",
         "path": "/surveys/{param}/stats${qs ",
@@ -16659,18 +16975,10 @@
         "caller": "makeRequest"
       },
       {
-        "key": "GET /surveys/{}/submissions/{}{}",
+        "key": "GET /surveys/{}/submissions/{}",
         "method": "GET",
-        "path": "/surveys/{param}/submissions/{param}{param}",
-        "normalizedPath": "/surveys/{}/submissions/{}{}",
-        "sourceFile": "src/tools/survey-tools.ts",
-        "caller": "makeRequest"
-      },
-      {
-        "key": "GET /surveys/{}{}",
-        "method": "GET",
-        "path": "/surveys/{param}{param}",
-        "normalizedPath": "/surveys/{}{}",
+        "path": "/surveys/{param}/submissions/{param}",
+        "normalizedPath": "/surveys/{}/submissions/{}",
         "sourceFile": "src/tools/survey-tools.ts",
         "caller": "makeRequest"
       },
@@ -16795,18 +17103,18 @@
         "caller": "makeRequest"
       },
       {
-        "key": "GET /workflows/{}/executions${qs ",
+        "key": "GET /workflows/{}",
         "method": "GET",
-        "path": "/workflows/{param}/executions${qs ",
-        "normalizedPath": "/workflows/{}/executions${qs ",
+        "path": "/workflows/{param}",
+        "normalizedPath": "/workflows/{}",
         "sourceFile": "src/tools/workflow-tools.ts",
         "caller": "makeRequest"
       },
       {
-        "key": "GET /workflows/{}{}",
+        "key": "GET /workflows/{}/executions${qs ",
         "method": "GET",
-        "path": "/workflows/{param}{param}",
-        "normalizedPath": "/workflows/{}{}",
+        "path": "/workflows/{param}/executions${qs ",
+        "normalizedPath": "/workflows/{}/executions${qs ",
         "sourceFile": "src/tools/workflow-tools.ts",
         "caller": "makeRequest"
       },
@@ -17674,8 +17982,8 @@
         "missing": 0
       },
       "emails": {
-        "official": 5,
-        "covered": 5,
+        "official": 19,
+        "covered": 19,
         "missing": 0
       },
       "forms": {

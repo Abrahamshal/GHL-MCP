@@ -13,7 +13,8 @@ Run these from the repo root.
 | `npm run start:http` | Start the HTTP MCP server. |
 | `npm run lint` | Type-check/build-check the server. |
 | `npm test` | Run Jest tests. |
-| `npm run scan:ghl-api` | Refresh official docs, generated official tools, coverage JSON/report, dashboard, inventory, and local-only classification. |
+| `npm run scan:ghl-api` | Refresh official docs, generated official tools, source lock, coverage JSON/report, dashboard, inventory, and local-only classification. |
+| `npm run validate:api-lock` | Confirm `docs/api-sources.lock.json` matches generated coverage. |
 | `npm run ci:ghl-api-drift` | CI guard that fails when generated API coverage artifacts are stale. |
 | `npm run smoke:ghl-live` | Run read-only live GHL checks when credentials are present. |
 | `npm run tools:doctor` | Check local setup, build output, credentials, and API coverage state. |
@@ -30,6 +31,8 @@ The built registry supports `GHL_TOOL_PROFILE`:
 - `full` - default, all raw endpoint tools plus curated agent workflow tools.
 - `curated` - only the high-level `agent-workspace` tools designed for chat CRM work and confirmation queues.
 - `raw` - the endpoint-level tools without the curated workflow layer.
+- `official` - explicit official OpenAPI and live-docs supplemental tools only.
+- `stable` - official, live-docs supplemental, curated, and legacy-compatible tools; hides deprecated and private/unstable tools.
 
 Examples:
 
@@ -37,12 +40,14 @@ Examples:
 GHL_TOOL_PROFILE=curated npm run tools:list
 GHL_TOOL_PROFILE=curated npm run start:stdio
 GHL_TOOL_PROFILE=raw npm run start:http
+GHL_TOOL_PROFILE=official npm run tools:list
+GHL_TOOL_PROFILE=stable npm run start:stdio
 ```
 
 ## Tooling Map
 
 - [CLI Commands](tooling/cli-commands.md) covers server, scanner, generator, CI, and smoke commands.
-- [API Coverage Dashboard](tooling/api-coverage.md) explains `docs/GHL-API-COVERAGE-REPORT.md`, `docs/GHL-LOCAL-ENDPOINT-CLASSIFICATION.md`, and `docs/ghl-api-coverage.json`.
+- [API Coverage Dashboard](tooling/api-coverage.md) explains `docs/GHL-API-COVERAGE-REPORT.md`, `docs/GHL-LOCAL-ENDPOINT-CLASSIFICATION.md`, `docs/api-sources.lock.json`, and `docs/ghl-api-coverage.json`.
 - [Client Config Generator](tooling/client-config-generator.md) defines the recommended generated config shapes for MCP clients.
 - [Live Smoke Testing](tooling/live-smoke-testing.md) documents the read-only smoke policy and required environment variables.
 - [Daily Drift PR Flow](tooling/daily-drift-pr-flow.md) describes the scheduled refresh workflow and review rules.

@@ -1,6 +1,6 @@
 /**
  * MCP Calendar Tools for GoHighLevel Integration
- * Exposes calendar and appointment management capabilities to Claude Desktop
+ * Exposes calendar and appointment management capabilities to MCP clients
  */
 
 import { Tool } from '@modelcontextprotocol/sdk/types.js';

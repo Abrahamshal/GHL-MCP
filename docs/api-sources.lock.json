@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "verifiedDate": "2026-06-10",
+  "primaryApiVersion": "2023-02-21",
+  "officialDocs": {
+    "repo": "https://github.com/GoHighLevel/highlevel-api-docs.git",
+    "branch": "main",
+    "commit": "ae4d260aada8e4340e1603a5573f977778e13ffd",
+    "tag": "ae4d260",
+    "expectedEndpointReferences": 590,
+    "expectedUniqueEndpoints": 590
+  },
+  "liveDocsSupplemental": {
+    "expectedEndpointReferences": 14,
+    "endpoints": [
+      {
+        "method": "DELETE",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/{campaignId}",
+        "app": "emails",
+        "operationId": "delete-email-campaign-v2",
+        "source": "live-docs:ghl/emails/delete-campaign-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "DELETE",
+        "path": "/emails/public/v2/locations/{locationId}/templates/{templateId}",
+        "app": "emails",
+        "operationId": "delete-email-template-v2",
+        "source": "live-docs:ghl/emails/delete-email-template-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/bulk-actions",
+        "app": "emails",
+        "operationId": "list-bulk-action-campaigns-v2",
+        "source": "live-docs:ghl/emails/list-bulk-action-campaigns-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/emails",
+        "app": "emails",
+        "operationId": "list-email-campaigns-v2",
+        "source": "live-docs:ghl/emails/list-email-campaigns-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/stats/{source}/{sourceId}",
+        "app": "emails",
+        "operationId": "get-campaign-stats-v2",
+        "source": "live-docs:ghl/emails/get-campaign-stats-under-campaigns-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/workflows",
+        "app": "emails",
+        "operationId": "list-workflow-campaigns-v2",
+        "source": "live-docs:ghl/emails/list-workflow-campaigns-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "GET",
+        "path": "/emails/public/v2/locations/{locationId}/templates",
+        "app": "emails",
+        "operationId": "list-email-templates-v2",
+        "source": "live-docs:ghl/emails/list-email-templates-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "PATCH",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/{campaignId}",
+        "app": "emails",
+        "operationId": "update-email-campaign-v2",
+        "source": "live-docs:ghl/emails/update-email-campaign-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "PATCH",
+        "path": "/emails/public/v2/locations/{locationId}/templates/{templateId}",
+        "app": "emails",
+        "operationId": "update-email-template-v2",
+        "source": "live-docs:ghl/emails/update-email-template-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/{campaignId}/schedule",
+        "app": "emails",
+        "operationId": "schedule-email-campaign-v2",
+        "source": "live-docs:ghl/emails/schedule-campaign-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/campaigns/email-campaign",
+        "app": "emails",
+        "operationId": "create-email-campaign-v2",
+        "source": "live-docs:ghl/emails/create-email-campaign-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/templates",
+        "app": "emails",
+        "operationId": "create-email-template-v2",
+        "source": "live-docs:ghl/emails/create-email-template-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/templates/folders",
+        "app": "emails",
+        "operationId": "create-template-folder-v2",
+        "source": "live-docs:ghl/emails/create-template-folder-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      },
+      {
+        "method": "POST",
+        "path": "/emails/public/v2/locations/{locationId}/templates/import",
+        "app": "emails",
+        "operationId": "import-email-template-v2",
+        "source": "live-docs:ghl/emails/import-email-template-v-2",
+        "version": "2023-02-21",
+        "verifiedDate": "2026-06-10"
+      }
+    ]
+  },
+  "acceptance": {
+    "expectedMissingOfficialEndpoints": 0,
+    "expectedCoveragePercent": 100
+  }
+}

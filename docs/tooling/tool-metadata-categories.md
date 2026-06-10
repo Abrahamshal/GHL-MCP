@@ -11,7 +11,8 @@ MCP clients need enough metadata to filter tools by product area, risk, and sour
       category: "official-contacts",
       access: "read",
       complexity: "generated",
-      source: "official-ghl-openapi"
+      source: "official-ghl-openapi",
+      stability: "official"
     },
     official: {
       app: "contacts",
@@ -61,9 +62,20 @@ When in doubt, choose the more cautious access label.
 | Source | Use |
 | --- | --- |
 | `official-ghl-openapi` | Endpoint came from the official docs repo. |
+| `live-ghl-docs` | Endpoint came from live Marketplace docs before landing in the GitHub OpenAPI fragments. |
 | `local-tool-module` | Endpoint came from handwritten MCP code. |
 | `ghl-changelog` | Endpoint is documented in changelog but not yet in the official OpenAPI snapshot. |
 | `legacy-or-private` | Endpoint is intentionally supported but not present in official docs. |
+
+## Stability
+
+| Stability | Use |
+| --- | --- |
+| `official` | Explicit official OpenAPI endpoint. |
+| `live-docs-supplemental` | Public live-docs endpoint not yet present in the GitHub OpenAPI fragments. |
+| `legacy-compatible` | Local compatibility tool that remains useful but is not exact official generated coverage. |
+| `private-or-unstable` | Tool appears private, internal, marketplace-specific, or otherwise less stable than public REST APIs. |
+| `deprecated` | Deprecated endpoint or compatibility alias that should be avoided in new workflows. |
 
 ## Client Behavior
 
@@ -73,3 +85,4 @@ MCP clients can use these labels to:
 - Group tools by GHL app area.
 - Prefer handwritten tools over generated fallback tools when names overlap.
 - Warn users before invoking internal or compatibility endpoints.
+- Hide `deprecated` and `private-or-unstable` tools in stable/default-safe experiences.

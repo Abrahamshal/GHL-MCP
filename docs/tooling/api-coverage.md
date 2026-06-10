@@ -8,6 +8,7 @@ The API coverage tooling answers one MCP question: does this server expose tools
 | --- | --- |
 | `docs/GHL-API-COVERAGE-REPORT.md` | Human report with source snapshot, coverage summary, app-area table, high-priority gaps, and update plan. |
 | `docs/GHL-LOCAL-ENDPOINT-CLASSIFICATION.md` | Human classification of local-only endpoints into changelog-only, legacy/private/internal, compatibility wrappers, dynamic/templated, and manual review buckets. |
+| `docs/api-sources.lock.json` | Source lock with the official docs commit, expected endpoint counts, live-docs supplemental endpoints, and acceptance gates. |
 | `docs/ghl-api-coverage.json` | Machine-readable source for generated official spec tools and downstream dashboards. |
 | `docs/API-DASHBOARD.md` | Compact dashboard for coverage, registry totals, access levels, and top categories. |
 | `docs/tool-inventory.json` | Machine-readable inventory of registered MCP tools with category, access, source, scopes, and endpoint metadata. |
@@ -26,6 +27,7 @@ These files are generated artifacts. Do not hand edit them; rerun `npm run scan:
 - `Exact-match coverage` is a conservative method/path match after path normalization.
 - `Likely missing official endpoints` means the current MCP surface has no local or generated exact match.
 - `Potential local-only/deprecated/private endpoints` means the server references endpoints not found in the official docs snapshot.
+- `docs/api-sources.lock.json` must match the generated coverage JSON; `npm run validate:api-lock` enforces that the report is tied to the intended docs commit and supplemental live-doc pages.
 - App-area rows help prioritize work by GHL product surface.
 
 ## Review Policy

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,12 +11,129 @@ const docsRepoUrl = 'https://github.com/GoHighLevel/highlevel-api-docs.git';
 const defaultDocsDir = join(repoRoot, 'tmp', 'highlevel-api-docs');
 const defaultReportPath = join(repoRoot, 'docs', 'GHL-API-COVERAGE-REPORT.md');
 const defaultJsonPath = join(repoRoot, 'docs', 'ghl-api-coverage.json');
+const defaultLockPath = join(repoRoot, 'docs', 'api-sources.lock.json');
+const sourceVerifiedDate = '2026-06-10';
 const httpMethods = new Set(['get', 'post', 'put', 'patch', 'delete']);
+const supplementalOfficialEndpoints = [
+  {
+    method: 'POST',
+    path: '/emails/public/v2/locations/{locationId}/campaigns/email-campaign',
+    app: 'emails',
+    operationId: 'create-email-campaign-v2',
+    summary: 'Create Email Campaign V2',
+    sourceFile: 'live-docs:ghl/emails/create-email-campaign-v-2',
+  },
+  {
+    method: 'GET',
+    path: '/emails/public/v2/locations/{locationId}/campaigns/emails',
+    app: 'emails',
+    operationId: 'list-email-campaigns-v2',
+    summary: 'List Email Campaigns V2',
+    sourceFile: 'live-docs:ghl/emails/list-email-campaigns-v-2',
+  },
+  {
+    method: 'PATCH',
+    path: '/emails/public/v2/locations/{locationId}/campaigns/{campaignId}',
+    app: 'emails',
+    operationId: 'update-email-campaign-v2',
+    summary: 'Update Email Campaign V2',
+    sourceFile: 'live-docs:ghl/emails/update-email-campaign-v-2',
+  },
+  {
+    method: 'DELETE',
+    path: '/emails/public/v2/locations/{locationId}/campaigns/{campaignId}',
+    app: 'emails',
+    operationId: 'delete-email-campaign-v2',
+    summary: 'Delete Email Campaign V2',
+    sourceFile: 'live-docs:ghl/emails/delete-campaign-v-2',
+  },
+  {
+    method: 'GET',
+    path: '/emails/public/v2/locations/{locationId}/campaigns/workflows',
+    app: 'emails',
+    operationId: 'list-workflow-campaigns-v2',
+    summary: 'List Workflow Campaigns V2',
+    sourceFile: 'live-docs:ghl/emails/list-workflow-campaigns-v-2',
+  },
+  {
+    method: 'GET',
+    path: '/emails/public/v2/locations/{locationId}/campaigns/bulk-actions',
+    app: 'emails',
+    operationId: 'list-bulk-action-campaigns-v2',
+    summary: 'List Bulk Action Campaigns V2',
+    sourceFile: 'live-docs:ghl/emails/list-bulk-action-campaigns-v-2',
+  },
+  {
+    method: 'POST',
+    path: '/emails/public/v2/locations/{locationId}/campaigns/{campaignId}/schedule',
+    app: 'emails',
+    operationId: 'schedule-email-campaign-v2',
+    summary: 'Schedule Campaign V2',
+    sourceFile: 'live-docs:ghl/emails/schedule-campaign-v-2',
+  },
+  {
+    method: 'POST',
+    path: '/emails/public/v2/locations/{locationId}/templates',
+    app: 'emails',
+    operationId: 'create-email-template-v2',
+    summary: 'Create Email Template V2',
+    sourceFile: 'live-docs:ghl/emails/create-email-template-v-2',
+  },
+  {
+    method: 'GET',
+    path: '/emails/public/v2/locations/{locationId}/templates',
+    app: 'emails',
+    operationId: 'list-email-templates-v2',
+    summary: 'List Email Templates V2',
+    sourceFile: 'live-docs:ghl/emails/list-email-templates-v-2',
+  },
+  {
+    method: 'POST',
+    path: '/emails/public/v2/locations/{locationId}/templates/import',
+    app: 'emails',
+    operationId: 'import-email-template-v2',
+    summary: 'Import Email Template V2',
+    sourceFile: 'live-docs:ghl/emails/import-email-template-v-2',
+  },
+  {
+    method: 'POST',
+    path: '/emails/public/v2/locations/{locationId}/templates/folders',
+    app: 'emails',
+    operationId: 'create-template-folder-v2',
+    summary: 'Create Email Template Folder V2',
+    sourceFile: 'live-docs:ghl/emails/create-template-folder-v-2',
+  },
+  {
+    method: 'DELETE',
+    path: '/emails/public/v2/locations/{locationId}/templates/{templateId}',
+    app: 'emails',
+    operationId: 'delete-email-template-v2',
+    summary: 'Delete Email Template V2',
+    sourceFile: 'live-docs:ghl/emails/delete-email-template-v-2',
+  },
+  {
+    method: 'PATCH',
+    path: '/emails/public/v2/locations/{locationId}/templates/{templateId}',
+    app: 'emails',
+    operationId: 'update-email-template-v2',
+    summary: 'Update Email Template V2',
+    sourceFile: 'live-docs:ghl/emails/update-email-template-v-2',
+  },
+  {
+    method: 'GET',
+    path: '/emails/public/v2/locations/{locationId}/campaigns/stats/{source}/{sourceId}',
+    app: 'emails',
+    operationId: 'get-campaign-stats-v2',
+    summary: 'Get Campaign Statistics V2',
+    sourceFile: 'live-docs:ghl/emails/get-campaign-stats-under-campaigns-v-2',
+  },
+];
 
 const args = parseArgs(process.argv.slice(2));
 const docsDir = args['docs-dir'] ? resolveFromRoot(args['docs-dir']) : defaultDocsDir;
 const reportPath = args.out ? resolveFromRoot(args.out) : defaultReportPath;
 const jsonPath = args.json ? resolveFromRoot(args.json) : defaultJsonPath;
+const lockPath = args.lock ? resolveFromRoot(args.lock) : defaultLockPath;
 
 ensureDocsRepo(docsDir, args.refresh === true);
 
@@ -51,13 +168,16 @@ const changelogFindings = [
 
 const comparison = compareEndpoints(official.endpoints, local.endpoints);
 const report = buildReport({ official, local, comparison, changelogFindings, docsDir });
+const sourceLock = buildSourceLock({ official, comparison });
 
 mkdirSync(dirname(reportPath), { recursive: true });
 writeFileSync(reportPath, report);
 writeFileSync(jsonPath, JSON.stringify({ official, local, comparison, changelogFindings }, null, 2));
+writeFileSync(lockPath, JSON.stringify(sourceLock, null, 2) + '\n');
 
 console.log(`Wrote ${relative(repoRoot, reportPath)}`);
 console.log(`Wrote ${relative(repoRoot, jsonPath)}`);
+console.log(`Wrote ${relative(repoRoot, lockPath)}`);
 console.log(`Official endpoints: ${official.endpoints.length}`);
 console.log(`Local endpoint references: ${local.endpoints.length}`);
 console.log(`Likely missing official endpoints: ${comparison.missingOfficial.length}`);
@@ -89,7 +209,8 @@ function runGit(args, cwd = repoRoot) {
 }
 
 function ensureDocsRepo(dir, refresh) {
-  if (!existsSync(dir)) {
+  if (!isExpectedDocsRepo(dir)) {
+    if (existsSync(dir)) rmSync(dir, { recursive: true, force: true });
     mkdirSync(dirname(dir), { recursive: true });
     runGit(['clone', '--depth', '1', docsRepoUrl, dir]);
     return;
@@ -99,6 +220,22 @@ function ensureDocsRepo(dir, refresh) {
     runGit(['fetch', '--depth', '1', 'origin', 'main'], dir);
     runGit(['checkout', 'FETCH_HEAD'], dir);
   }
+}
+
+function isExpectedDocsRepo(dir) {
+  if (!existsSync(dir)) return false;
+  const gitRoot = safeGit(['rev-parse', '--show-toplevel'], dir);
+  if (gitRoot !== dir) return false;
+
+  const originUrl = safeGit(['config', '--get', 'remote.origin.url'], dir);
+  return normalizeGitUrl(originUrl) === normalizeGitUrl(docsRepoUrl);
+}
+
+function normalizeGitUrl(url) {
+  return url
+    .trim()
+    .replace(/^git@github\.com:/, 'https://github.com/')
+    .replace(/\.git$/, '');
 }
 
 function extractOfficialEndpoints(dir) {
@@ -126,6 +263,19 @@ function extractOfficialEndpoints(dir) {
       }
     }
   }
+
+  endpoints.push(...supplementalOfficialEndpoints.map((endpoint) => ({
+    key: makeKey(endpoint.method, endpoint.path),
+    method: endpoint.method,
+    path: endpoint.path,
+    normalizedPath: normalizePath(endpoint.path),
+    app: endpoint.app,
+    operationId: endpoint.operationId,
+    summary: endpoint.summary,
+    versions: ['2023-02-21'],
+    scopes: [],
+    sourceFile: endpoint.sourceFile,
+  })));
 
   const commit = runGit(['rev-parse', 'HEAD'], dir);
   const tag = safeGit(['describe', '--tags', '--always'], dir);
@@ -212,6 +362,7 @@ function cleanLocalPath(rawPath) {
   let value = rawPath.slice(1, -1);
   value = value.replace(/\$\{[^}]+\}/g, '{param}');
   value = value.replace(/\?.*$/, '');
+  value = value.replace(/([^/])\{param\}$/, '$1');
   value = value.replace(/\/+/g, '/');
   return value;
 }
@@ -276,6 +427,43 @@ function compareEndpoints(officialEndpoints, localEndpoints) {
     missingOfficial,
     localOnly,
     byApp,
+  };
+}
+
+function buildSourceLock({ official, comparison }) {
+  const supplemental = official.endpoints
+    .filter((endpoint) => endpoint.sourceFile?.startsWith('live-docs:'))
+    .map((endpoint) => ({
+      method: endpoint.method,
+      path: endpoint.path,
+      app: endpoint.app,
+      operationId: endpoint.operationId,
+      source: endpoint.sourceFile,
+      version: endpoint.versions?.[0] || '2023-02-21',
+      verifiedDate: sourceVerifiedDate,
+    }))
+    .sort((a, b) => `${a.method} ${a.path}`.localeCompare(`${b.method} ${b.path}`));
+
+  return {
+    schemaVersion: 1,
+    verifiedDate: sourceVerifiedDate,
+    primaryApiVersion: '2023-02-21',
+    officialDocs: {
+      repo: official.repo,
+      branch: 'main',
+      commit: official.commit,
+      tag: official.tag,
+      expectedEndpointReferences: official.endpoints.length,
+      expectedUniqueEndpoints: comparison.officialUniqueCount,
+    },
+    liveDocsSupplemental: {
+      expectedEndpointReferences: supplemental.length,
+      endpoints: supplemental,
+    },
+    acceptance: {
+      expectedMissingOfficialEndpoints: 0,
+      expectedCoveragePercent: 100,
+    },
   };
 }
 
@@ -358,14 +546,14 @@ ${formatEndpointList(localOnlyHighRisk)}
 
 ## Recommended Update Plan
 
-1. Add a CI-friendly version of this scanner so API drift is visible after every docs refresh.
+1. Keep the scanner pointed at both the official GitHub OpenAPI fragments and live-docs supplemental endpoints that have not landed in the GitHub repo yet.
 2. Make \`GHL_API_VERSION\` configurable in all server entry points and keep endpoint-specific overrides for APIs that still require older version headers.
-3. Review \`users-tools.ts\` against the latest official users spec and retire or alias deprecated \`GET /users/\` behavior.
+3. Mark deprecated \`GET /users/\` behavior clearly in user-facing docs/tool descriptions while preserving compatibility as long as the official spec still lists it.
 4. Keep the first-class top-level Notes module in place for the 2026-04-21 changelog endpoints, and reconcile it against the official spec once those endpoints land in the docs repo.
-5. Upgrade \`email-tools.ts\` and \`campaigns-tools.ts\` toward the Email Campaign V2 endpoints under \`/emails/*\`; preserve old tool names as compatibility aliases where practical.
+5. Keep Email Campaign V2 tools under \`/emails/public/v2/*\` as live-docs supplemental coverage until HighLevel publishes them in \`apps/emails.json\`.
 6. Update OAuth/private-integration scope documentation for new audit-log, location-management, and payment-settings scopes.
 7. Manually inspect local-only campaign, workflow, OAuth, and trigger endpoints. If they are internal/private APIs, mark them clearly in tool descriptions and README so users know their stability profile.
-8. Add targeted tests for each migrated module using the current official path, method, version header, and required query/body fields.
+8. Add targeted tests for live-docs supplemental modules using the current official path, method, version header, and required query/body fields.
 
 ## Full Machine-Readable Output
 

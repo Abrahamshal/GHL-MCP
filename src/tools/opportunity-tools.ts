@@ -1,6 +1,6 @@
 /**
  * MCP Opportunity Tools for GoHighLevel Integration
- * Exposes opportunity management capabilities to Claude Desktop
+ * Exposes opportunity management capabilities to MCP clients
  */
 
 import { Tool } from '@modelcontextprotocol/sdk/types.js';

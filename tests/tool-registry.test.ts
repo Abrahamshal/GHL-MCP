@@ -57,4 +57,31 @@ describe('ToolRegistry profiles', () => {
     expect(names).toContain('search_contacts');
     expect(names).not.toContain('crm_prepare_lead_intake');
   });
+
+  it('can expose only explicit official and live-docs supplemental tools', () => {
+    process.env.GHL_TOOL_PROFILE = 'official';
+    const registry = new ToolRegistry(mockClient as any);
+    const inventory = registry.getToolInventory();
+    const names = inventory.map((tool) => tool.name);
+
+    expect(registry.getToolProfile()).toBe('official');
+    expect(names).toContain('official_ad_manager_fb_get_reporting');
+    expect(names).toContain('create_email_campaign_v2');
+    expect(names).not.toContain('search_contacts');
+    expect(inventory.every((tool) => ['official', 'live-docs-supplemental'].includes(tool.stability))).toBe(true);
+  });
+
+  it('can expose stable tools while hiding deprecated and private/unstable surfaces', () => {
+    process.env.GHL_TOOL_PROFILE = 'stable';
+    const registry = new ToolRegistry(mockClient as any);
+    const inventory = registry.getToolInventory();
+    const names = inventory.map((tool) => tool.name);
+
+    expect(registry.getToolProfile()).toBe('stable');
+    expect(names).toContain('search_contacts');
+    expect(names).toContain('official_ad_manager_fb_get_reporting');
+    expect(names).toContain('crm_prepare_lead_intake');
+    expect(inventory.some((tool) => tool.stability === 'deprecated')).toBe(false);
+    expect(inventory.some((tool) => tool.stability === 'private-or-unstable')).toBe(false);
+  });
 });

@@ -25,6 +25,22 @@ GHL_TOOL_PROFILE=curated npm run tools:list
 
 Use the read-only views first when testing a new token/location.
 
+## Easy Buttons
+
+```bash
+npm run first-run
+npm run connect
+npm run ready
+npm run demo
+npm run explain-error -- "Location is not active"
+```
+
+- `first-run` gives a setup grade and the next best command.
+- `connect` runs setup and emits MCP client config.
+- `ready` is the fast readiness check.
+- `demo` prints the no-credentials MCP Apps preview path.
+- `explain-error` turns common setup/API errors into plain next steps.
+
 ## Common Workflows
 
 - Contacts: search, create, update, tag, dedupe, and add notes.
@@ -37,6 +53,20 @@ Use the read-only views first when testing a new token/location.
 - Workflows: prepare safe workflow enrollment.
 - Media: list and upload media where supported.
 - Location health: inspect users, locations, setup health, and operational gaps.
+
+## High-Level Agent Tools
+
+- `crm_location_overview`: read-only location operating snapshot.
+- `crm_daily_briefing`: read-only daily CRM briefing.
+- `crm_search_everything`: one search across contacts, conversations, opportunities, calendars, and products.
+- `crm_next_best_actions`: confirmation-gated recommended action bundle.
+- `crm_get_next_page`: pagination helper for agents.
+- `crm_prepare_contact_followup`: note, task, and outbound draft bundle.
+- `crm_prepare_lead_reactivation`: tag, note, task, message, and workflow reactivation plan.
+- `crm_prepare_missed_call_response`: missed-call SMS, note, and task plan.
+- `crm_prepare_pipeline_cleanup`: stale opportunity cleanup plan.
+- `crm_prepare_review_request_batch`: multi-contact review request plan.
+- `crm_prepare_invoice_followup`: invoice reminder note, task, and draft plan.
 
 ## Starter Prompts
 

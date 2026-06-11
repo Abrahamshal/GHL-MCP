@@ -19,6 +19,8 @@ const locationStatusText = locationResult.status ? `HTTP ${locationResult.status
 console.log(`${locationResult.ok ? 'ok' : 'fail'} ${locationCheck.name} [${locationCheck.area}; ${locationCheck.method}] ${locationStatusText}`);
 
 let failed = locationResult.ok ? 0 : 1;
+const areaStats = new Map();
+trackArea(locationCheck.area, locationResult.ok);
 const companyId = process.env.GHL_COMPANY_ID || locationResult.data?.location?.companyId || locationResult.data?.companyId;
 
 const readChecks = [
@@ -57,10 +59,15 @@ for (const check of checks) {
   const statusText = result.status ? `HTTP ${result.status}${result.message ? ` ${result.message}` : ''}` : result.error;
   console.log(`${result.ok ? 'ok' : 'fail'} ${check.name} [${check.area}; ${check.method}] ${statusText}`);
   if (!result.ok) failed += 1;
+  trackArea(check.area, result.ok);
 }
 
 const totalChecks = checks.length + 1;
 console.log(`Live smoke complete: ${totalChecks - failed}/${totalChecks} checks passed.`);
+console.log('By area:');
+for (const [area, stats] of areaStats.entries()) {
+  console.log(`- ${area}: ${stats.passed}/${stats.total}`);
+}
 if (failed > 0) process.exit(1);
 
 async function runCheck(check) {
@@ -103,6 +110,13 @@ function parseJson(text) {
   } catch {
     return undefined;
   }
+}
+
+function trackArea(area, ok) {
+  const stats = areaStats.get(area) || { passed: 0, total: 0 };
+  stats.total += 1;
+  if (ok) stats.passed += 1;
+  areaStats.set(area, stats);
 }
 
 function summarizeResponseText(text) {

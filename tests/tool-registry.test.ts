@@ -48,6 +48,69 @@ describe('ToolRegistry profiles', () => {
     expect(await registry.callTool('crm_list_workspaces', {})).toBeDefined();
   });
 
+  it('exposes advanced curated overview, search, briefing, action, pagination, and prepare tools', async () => {
+    process.env.GHL_TOOL_PROFILE = 'curated';
+    const registry = new ToolRegistry(mockClient as any);
+    const names = registry.getAllToolNames();
+
+    expect(names).toEqual(expect.arrayContaining([
+      'crm_location_overview',
+      'crm_daily_briefing',
+      'crm_next_best_actions',
+      'crm_search_everything',
+      'crm_get_next_page',
+      'crm_prepare_contact_followup',
+      'crm_prepare_lead_reactivation',
+      'crm_prepare_missed_call_response',
+      'crm_prepare_pipeline_cleanup',
+      'crm_prepare_review_request_batch',
+      'crm_prepare_invoice_followup',
+    ]));
+
+    const overview = await registry.callTool('crm_location_overview', {});
+    expect(overview).toMatchObject({
+      workflow: expect.objectContaining({ name: 'crm_location_overview' }),
+      resultSummary: expect.objectContaining({ readResults: expect.any(Number) }),
+    });
+
+    const followup = await registry.callTool('crm_prepare_contact_followup', {
+      contactId: 'contact-123',
+      message: 'Checking in',
+      taskTitle: 'Follow up',
+    });
+    expect(followup).toMatchObject({
+      confirmationRequired: true,
+      resultSummary: expect.objectContaining({ writeActions: expect.any(Number) }),
+    });
+    expect((followup as any).executeToolCalls.map((call: any) => call.tool)).toEqual(expect.arrayContaining(['send_sms', 'create_contact_task']));
+
+    const nextBest = await registry.callTool('crm_next_best_actions', {
+      contactId: 'contact-123',
+      opportunityId: 'opp-123',
+      intent: 'Book appointment',
+    });
+    expect(nextBest).toMatchObject({
+      confirmationRequired: true,
+      resultSummary: expect.objectContaining({ writeActions: expect.any(Number) }),
+    });
+    expect((nextBest as any).executeToolCalls.map((call: any) => call.tool)).toEqual(
+      expect.arrayContaining(['create_contact_task', 'create_contact_note'])
+    );
+
+    const reviewBatch = await registry.callTool('crm_prepare_review_request_batch', {
+      contactIds: ['contact-1', 'contact-2'],
+      message: 'Would you mind leaving us a review?',
+    });
+    expect(reviewBatch).toMatchObject({
+      confirmationRequired: true,
+      resultSummary: expect.objectContaining({ writeActions: 2 }),
+    });
+    expect((reviewBatch as any).executeToolCalls.map((call: any) => call.tool)).toEqual([
+      'send_review_request',
+      'send_review_request',
+    ]);
+  });
+
   it('can expose only raw endpoint-level tools', () => {
     process.env.GHL_TOOL_PROFILE = 'raw';
     const registry = new ToolRegistry(mockClient as any);

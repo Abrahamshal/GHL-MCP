@@ -43,6 +43,11 @@ npm run auth-check
 
 ```bash
 npm run setup                 # Create .env if needed, build, and print next steps
+npm run first-run             # One-command beginner setup/readiness flow
+npm run connect               # Setup plus client config generation
+npm run ready                 # Fast readiness check
+npm run demo                  # Print MCP Apps demo preview instructions
+npm run explain-error -- "Location is not active"
 npm run doctor                # Human-readable setup check
 npm run doctor -- --json      # Agent-readable setup check
 npm run agent:check           # Safe validation for AI/dev agents
@@ -117,6 +122,22 @@ npm run tools:explorer
 
 The static explorer is `docs/tool-explorer.html`.
 
+## High-Level Agent Tools
+
+Start agents with the curated profile and prefer these high-level tools before raw endpoints:
+
+- `crm_location_overview`
+- `crm_daily_briefing`
+- `crm_search_everything`
+- `crm_next_best_actions`
+- `crm_get_next_page`
+- `crm_prepare_contact_followup`
+- `crm_prepare_lead_reactivation`
+- `crm_prepare_missed_call_response`
+- `crm_prepare_pipeline_cleanup`
+- `crm_prepare_review_request_batch`
+- `crm_prepare_invoice_followup`
+
 ## Docs
 
 - [Update Log](UPDATE_LOG.md)
@@ -136,6 +157,7 @@ The static explorer is `docs/tool-explorer.html`.
 
 | Date | Update # | Included |
 | --- | ---: | --- |
+| 2026-06-11 | 2 | Simplicity and power layer: easy setup commands, safe config writing, grouped live smoke checks, and high-level curated CRM agent tools. See [UPDATE_LOG.md](UPDATE_LOG.md) for the full permanent update description. |
 | 2026-06-11 | 1 | Onboarding and agent setup overhaul. See [UPDATE_LOG.md](UPDATE_LOG.md) for the full permanent update description. |
 
 ## API Coverage

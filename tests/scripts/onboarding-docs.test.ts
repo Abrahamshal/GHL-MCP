@@ -14,6 +14,11 @@ describe('onboarding documentation and scripts', () => {
 
     for (const script of [
       'setup',
+      'connect',
+      'first-run',
+      'ready',
+      'demo',
+      'explain-error',
       'doctor',
       'auth-check',
       'agent:setup',

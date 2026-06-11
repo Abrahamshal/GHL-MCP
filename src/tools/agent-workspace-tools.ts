@@ -20,7 +20,13 @@ type WorkspaceToolSpec = {
   inputProperties?: JsonRecord;
   required?: string[];
   buildActions?: (args: JsonRecord, locationId: string) => WorkflowAction[];
-  readPlan?: Array<{ label: string; tool: string; method: 'GET'; path: (args: JsonRecord, locationId: string) => string | undefined }>;
+  readPlan?: Array<{
+    label: string;
+    tool: string;
+    method: 'GET' | 'POST';
+    path: (args: JsonRecord, locationId: string) => string | undefined;
+    body?: (args: JsonRecord, locationId: string) => JsonRecord;
+  }>;
 };
 
 const CONTACT_FIELDS = {
@@ -60,6 +66,78 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
     ],
   },
   {
+    name: 'crm_location_overview',
+    title: 'Location Overview',
+    description: 'Gather one compact, read-only operating overview for a GHL location: location profile, contacts, pipelines, calendars, products, and email activity.',
+    app: 'agency-admin',
+    access: 'read',
+    readPlan: [
+      { label: 'Location profile', tool: 'get_location', method: 'GET', path: (_args, locationId) => `/locations/${enc(locationId)}` },
+      { label: 'Recent contacts', tool: 'search_contacts', method: 'POST', path: () => '/contacts/search', body: (_args, locationId) => ({ locationId, pageLimit: 5 }) },
+      { label: 'Pipelines', tool: 'get_pipelines', method: 'GET', path: (_args, locationId) => `/opportunities/pipelines?locationId=${enc(locationId)}` },
+      { label: 'Calendars', tool: 'get_calendars', method: 'GET', path: (_args, locationId) => `/calendars/?locationId=${enc(locationId)}` },
+      { label: 'Products', tool: 'list_products', method: 'GET', path: (_args, locationId) => `/products/?locationId=${enc(locationId)}&limit=5` },
+      { label: 'Email campaigns', tool: 'official_emails_list_campaign_emails_v2', method: 'GET', path: (_args, locationId) => `/emails/public/v2/locations/${enc(locationId)}/campaigns/emails?limit=5` },
+    ],
+  },
+  {
+    name: 'crm_daily_briefing',
+    title: 'Daily Briefing',
+    description: 'Build a read-only daily operating briefing from recent contacts, opportunities, calendars, reviews, and email activity.',
+    app: 'agency-admin',
+    access: 'read',
+    inputProperties: { focus: { type: 'string' }, limit: { type: 'number' } },
+    readPlan: [
+      { label: 'Recent contacts', tool: 'search_contacts', method: 'POST', path: () => '/contacts/search', body: (args, locationId) => ({ locationId, pageLimit: numberArg(args.limit) || 5 }) },
+      { label: 'Open opportunities', tool: 'search_opportunities', method: 'GET', path: (_args, locationId) => `/opportunities/search?location_id=${enc(locationId)}&status=open` },
+      { label: 'Calendars', tool: 'get_calendars', method: 'GET', path: (_args, locationId) => `/calendars/?locationId=${enc(locationId)}` },
+      { label: 'Reviews', tool: 'get_reviews', method: 'GET', path: (_args, locationId) => `/reputation/reviews?locationId=${enc(locationId)}` },
+    ],
+  },
+  {
+    name: 'crm_search_everything',
+    title: 'Search Everything',
+    description: 'Search across contacts, conversations, opportunities, calendars, and products from one agent-friendly tool.',
+    app: 'tool-explorer',
+    access: 'read',
+    inputProperties: { query: { type: 'string' }, limit: { type: 'number' } },
+    readPlan: [
+      { label: 'Contacts', tool: 'search_contacts', method: 'POST', path: () => '/contacts/search', body: (args, locationId) => ({ locationId, pageLimit: numberArg(args.limit) || 5, query: args.query }) },
+      { label: 'Conversations', tool: 'search_conversations', method: 'GET', path: (args, locationId) => `/conversations/search?locationId=${enc(locationId)}${stringArg(args.query) ? `&query=${enc(stringArg(args.query))}` : ''}` },
+      { label: 'Opportunities', tool: 'search_opportunities', method: 'GET', path: (_args, locationId) => `/opportunities/search?location_id=${enc(locationId)}` },
+      { label: 'Calendars', tool: 'get_calendars', method: 'GET', path: (_args, locationId) => `/calendars/?locationId=${enc(locationId)}` },
+      { label: 'Products', tool: 'list_products', method: 'GET', path: (_args, locationId) => `/products/?locationId=${enc(locationId)}&limit=5` },
+    ],
+  },
+  {
+    name: 'crm_get_next_page',
+    title: 'Get Next Page Helper',
+    description: 'Prepare the next read call for paginated tools without requiring the agent to remember cursor or searchAfter details.',
+    app: 'tool-explorer',
+    access: 'read',
+    inputProperties: { tool: { type: 'string' }, searchAfter: { type: 'array' }, page: { type: 'number' }, limit: { type: 'number' }, query: { type: 'string' } },
+    buildActions: (args, locationId) => [
+      action('Next contacts page', 'search_contacts', { locationId, pageLimit: numberArg(args.limit) || 25, searchAfter: args.searchAfter, query: args.query }, 'read', false),
+      action('Next generic page', stringArg(args.tool) || 'search_contacts', { locationId, page: args.page, limit: args.limit, query: args.query }, 'read', false),
+    ],
+  },
+  {
+    name: 'crm_next_best_actions',
+    title: 'Next Best Actions',
+    description: 'Prepare a prioritized set of safe next actions from CRM context: follow-up task, note, message draft, and optional workflow enrollment.',
+    app: 'lead-intake',
+    access: 'write',
+    inputProperties: { contactId: CONTACT_FIELDS.contactId, opportunityId: { type: 'string' }, reason: { type: 'string' }, message: { type: 'string' }, workflowId: { type: 'string' } },
+    required: ['contactId'],
+    buildActions: (args) => [
+      action('Load contact context', 'get_contact', { contactId: args.contactId }, 'read', false),
+      action('Add recommended note', 'create_contact_note', { contactId: args.contactId, body: args.reason || 'Next-best-action recommendation reviewed.' }, 'write', true),
+      action('Create recommended task', 'create_contact_task', { contactId: args.contactId, title: args.reason || 'Follow up on recommended next action' }, 'write', true),
+      action('Draft recommended message', 'send_sms', { contactId: args.contactId, message: args.message }, 'write', true),
+      action('Enroll recommended workflow', 'add_contact_to_workflow', { contactId: args.contactId, workflowId: args.workflowId }, 'write', true),
+    ],
+  },
+  {
     name: 'crm_prepare_contact_update',
     title: 'Prepare Contact Update',
     description: 'Prepare a confirmation-gated contact update with duplicate checks, notes, tags, and follow-up task options.',
@@ -75,6 +153,21 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
       action('Save contact fields', stringArg(args.contactId) ? 'update_contact' : 'upsert_contact', pick(args, ['contactId', 'firstName', 'lastName', 'email', 'phone', 'tags']), 'write', true),
       action('Add contact note', 'create_contact_note', { contactId: args.contactId, body: args.note }, 'write', true),
       action('Create follow-up task', 'create_contact_task', { contactId: args.contactId, title: args.taskTitle, dueDate: args.dueDate }, 'write', true),
+    ],
+  },
+  {
+    name: 'crm_prepare_contact_followup',
+    title: 'Prepare Contact Follow-Up',
+    description: 'Prepare a contact follow-up bundle: context read, note, task, and optional SMS/email draft.',
+    app: 'contact-workspace',
+    access: 'write',
+    inputProperties: { contactId: CONTACT_FIELDS.contactId, message: { type: 'string' }, channel: { type: 'string', enum: ['sms', 'email'] }, subject: { type: 'string' }, taskTitle: { type: 'string' }, dueDate: { type: 'string' }, note: { type: 'string' } },
+    required: ['contactId'],
+    buildActions: (args) => [
+      action('Load contact context', 'get_contact', { contactId: args.contactId }, 'read', false),
+      action('Add follow-up note', 'create_contact_note', { contactId: args.contactId, body: args.note || args.message }, 'write', true),
+      action('Create follow-up task', 'create_contact_task', { contactId: args.contactId, title: args.taskTitle || 'Follow up', dueDate: args.dueDate }, 'write', true),
+      action('Draft follow-up message', stringArg(args.channel) === 'email' ? 'send_email' : 'send_sms', pick(args, ['contactId', 'subject', 'message']), 'write', true),
     ],
   },
   {
@@ -159,6 +252,23 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
     ],
   },
   {
+    name: 'crm_prepare_lead_reactivation',
+    title: 'Prepare Lead Reactivation',
+    description: 'Prepare a dormant lead reactivation plan with tag, note, task, optional message, and optional workflow enrollment.',
+    app: 'lead-intake',
+    access: 'write',
+    inputProperties: { contactId: CONTACT_FIELDS.contactId, message: { type: 'string' }, tag: { type: 'string' }, workflowId: { type: 'string' }, taskTitle: { type: 'string' }, note: { type: 'string' } },
+    required: ['contactId'],
+    buildActions: (args) => [
+      action('Load lead context', 'get_contact', { contactId: args.contactId }, 'read', false),
+      action('Tag reactivation lead', 'add_contact_tags', { contactId: args.contactId, tags: [args.tag || 'reactivation'] }, 'write', true),
+      action('Add reactivation note', 'create_contact_note', { contactId: args.contactId, body: args.note || 'Prepared lead reactivation.' }, 'write', true),
+      action('Create reactivation task', 'create_contact_task', { contactId: args.contactId, title: args.taskTitle || 'Reactivate lead' }, 'write', true),
+      action('Draft reactivation SMS', 'send_sms', { contactId: args.contactId, message: args.message }, 'write', true),
+      action('Enroll reactivation workflow', 'add_contact_to_workflow', { contactId: args.contactId, workflowId: args.workflowId }, 'write', true),
+    ],
+  },
+  {
     name: 'crm_conversation_workspace',
     title: 'Open Conversation Workspace Data',
     description: 'Gather conversation threads, recent messages, and optional contact context for reply drafting.',
@@ -204,6 +314,21 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
     inputProperties: { conversationId: { type: 'string' }, status: { type: 'string' } },
     required: ['conversationId', 'status'],
     buildActions: (args) => [action('Update conversation status', 'update_conversation', pick(args, ['conversationId', 'status']), 'write', true)],
+  },
+  {
+    name: 'crm_prepare_missed_call_response',
+    title: 'Prepare Missed Call Response',
+    description: 'Prepare a missed-call response with contact context, SMS draft, note, and follow-up task.',
+    app: 'conversation-inbox',
+    access: 'write',
+    inputProperties: { contactId: CONTACT_FIELDS.contactId, message: { type: 'string' }, taskTitle: { type: 'string' }, dueDate: { type: 'string' } },
+    required: ['contactId'],
+    buildActions: (args) => [
+      action('Load missed-call contact', 'get_contact', { contactId: args.contactId }, 'read', false),
+      action('Draft missed-call SMS', 'send_sms', { contactId: args.contactId, message: args.message || 'Sorry we missed your call. How can we help?' }, 'write', true),
+      action('Log missed-call note', 'create_contact_note', { contactId: args.contactId, body: 'Prepared missed-call response.' }, 'write', true),
+      action('Create missed-call follow-up task', 'create_contact_task', { contactId: args.contactId, title: args.taskTitle || 'Follow up on missed call', dueDate: args.dueDate }, 'write', true),
+    ],
   },
   {
     name: 'crm_pipeline_workspace',
@@ -258,6 +383,21 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
       action('Add opportunity note', 'create_contact_note', { contactId: args.contactId, body: args.note || args.nextStep }, 'write', true),
       action('Create follow-up task', 'create_contact_task', { contactId: args.contactId, title: args.nextStep }, 'write', true),
       action('Draft follow-up SMS', 'send_sms', { contactId: args.contactId, message: args.message }, 'write', true),
+    ],
+  },
+  {
+    name: 'crm_prepare_pipeline_cleanup',
+    title: 'Prepare Pipeline Cleanup',
+    description: 'Prepare cleanup actions for stale pipeline opportunities: context read, stage/status update, notes, and follow-up tasks.',
+    app: 'pipeline-board',
+    access: 'write',
+    inputProperties: { opportunityId: { type: 'string' }, contactId: CONTACT_FIELDS.contactId, stageId: { type: 'string' }, status: { type: 'string' }, note: { type: 'string' }, taskTitle: { type: 'string' } },
+    required: ['opportunityId'],
+    buildActions: (args) => [
+      action('Load opportunity', 'get_opportunity', { opportunityId: args.opportunityId }, 'read', false),
+      action('Update stale opportunity', 'update_opportunity', pick(args, ['opportunityId', 'stageId', 'status']), 'write', true),
+      action('Log cleanup note', 'create_contact_note', { contactId: args.contactId, body: args.note || 'Pipeline cleanup reviewed.' }, 'write', true),
+      action('Create cleanup task', 'create_contact_task', { contactId: args.contactId, title: args.taskTitle || 'Pipeline cleanup follow-up' }, 'write', true),
     ],
   },
   {
@@ -378,6 +518,16 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
     buildActions: (args) => [action('Send review request', 'send_review_request', pick(args, ['contactId', 'message', 'channel']), 'write', true)],
   },
   {
+    name: 'crm_prepare_review_request_batch',
+    title: 'Prepare Review Request Batch',
+    description: 'Prepare review requests for multiple contacts with one confirmation-gated batch plan.',
+    app: 'reputation-center',
+    access: 'write',
+    inputProperties: { contactIds: { type: 'array', items: { type: 'string' } }, message: { type: 'string' }, channel: { type: 'string' } },
+    required: ['contactIds'],
+    buildActions: (args) => arrayArg(args.contactIds).map((contactId) => action(`Send review request to ${contactId}`, 'send_review_request', { contactId, message: args.message, channel: args.channel }, 'write', true)),
+  },
+  {
     name: 'crm_ads_workspace',
     title: 'Open Ads Workspace Data',
     description: 'Gather ads, attribution, funnel, conversion, and setup health reporting.',
@@ -422,6 +572,21 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
     buildActions: (args) => [
       action('Create invoice', 'create_invoice', pick(args, ['contactId', 'amount', 'memo']), 'write', true),
       action('Send invoice', 'send_invoice', { invoiceId: args.invoiceId }, 'write', true),
+    ],
+  },
+  {
+    name: 'crm_prepare_invoice_followup',
+    title: 'Prepare Invoice Follow-Up',
+    description: 'Prepare an invoice follow-up with invoice context, contact note, task, and optional SMS/email reminder.',
+    app: 'billing-commerce',
+    access: 'write',
+    inputProperties: { invoiceId: { type: 'string' }, contactId: CONTACT_FIELDS.contactId, message: { type: 'string' }, channel: { type: 'string', enum: ['sms', 'email'] }, subject: { type: 'string' }, taskTitle: { type: 'string' } },
+    required: ['invoiceId', 'contactId'],
+    buildActions: (args) => [
+      action('Load invoice', 'get_invoice', { invoiceId: args.invoiceId }, 'read', false),
+      action('Add invoice follow-up note', 'create_contact_note', { contactId: args.contactId, body: args.message || 'Invoice follow-up prepared.' }, 'write', true),
+      action('Create invoice follow-up task', 'create_contact_task', { contactId: args.contactId, title: args.taskTitle || 'Invoice follow-up' }, 'write', true),
+      action('Draft invoice reminder', stringArg(args.channel) === 'email' ? 'send_email' : 'send_sms', pick(args, ['contactId', 'subject', 'message']), 'write', true),
     ],
   },
   {
@@ -538,6 +703,7 @@ export class AgentWorkspaceTools {
       locationId,
       confirmationRequired: proposedActions.some((item) => item.requiresConfirmation),
       readResults,
+      resultSummary: resultSummary(readResults, proposedActions),
       proposedActions,
       executeToolCalls: proposedActions
         .filter((item) => item.requiresConfirmation)
@@ -571,13 +737,13 @@ export class AgentWorkspaceTools {
       const path = item.path(args, locationId);
       if (!path) return undefined;
       try {
-        const response = await this.ghlClient.makeRequest(item.method, path);
+        const response = await this.ghlClient.makeRequest(item.method, path, item.body?.(args, locationId));
         return {
           label: item.label,
           tool: item.tool,
           path,
           success: response.success,
-          data: response.success ? response.data : undefined,
+          data: response.success ? summarizeData(response.data) : undefined,
           error: response.success ? undefined : response.error,
         };
       } catch (error) {
@@ -612,12 +778,56 @@ function summarize(spec: WorkspaceToolSpec, actions: WorkflowAction[]): string {
   return `${spec.title} staged ${writeCount} confirmation-gated write action${writeCount === 1 ? '' : 's'} plus ${actions.length - writeCount} context action${actions.length - writeCount === 1 ? '' : 's'}.`;
 }
 
+function resultSummary(readResults: unknown[], actions: WorkflowAction[]): JsonRecord {
+  const resultRecords = readResults.filter(isRecord);
+  return {
+    readResults: readResults.length,
+    successfulReads: resultRecords.filter((item) => item.success === true).length,
+    failedReads: resultRecords.filter((item) => item.success === false).length,
+    readActions: actions.filter((item) => item.risk === 'read').length,
+    writeActions: actions.filter((item) => item.requiresConfirmation).length,
+    destructiveActions: actions.filter((item) => item.risk === 'destructive').length,
+  };
+}
+
+function summarizeData(data: unknown): unknown {
+  if (Array.isArray(data)) return { count: data.length, items: data.slice(0, 5) };
+  if (!isRecord(data)) return data;
+  const summary: JsonRecord = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (Array.isArray(value)) {
+      summary[key] = { count: value.length, items: value.slice(0, 5) };
+    } else if (isRecord(value)) {
+      summary[key] = Object.fromEntries(Object.entries(value).slice(0, 12));
+    } else {
+      summary[key] = value;
+    }
+  }
+  return summary;
+}
+
 function locationArg(args: JsonRecord, fallback: string): string {
   return stringArg(args.locationId) || fallback || '';
 }
 
 function stringArg(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function numberArg(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) return Number(value);
+  return undefined;
+}
+
+function arrayArg(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string' && value.trim()) return value.split(',').map((item) => item.trim()).filter(Boolean);
+  return [];
+}
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function compact(args: JsonRecord): JsonRecord {

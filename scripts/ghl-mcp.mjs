@@ -16,9 +16,14 @@ loadDotEnv();
 const commands = {
   help,
   setup,
+  connect,
+  'first-run': firstRun,
+  ready,
+  demo,
   doctor,
   'agent-check': agentCheck,
   'auth-check': authCheck,
+  'explain-error': explainError,
   'list-tools': listTools,
   'test-tool': testTool,
   'env-template': envTemplate,
@@ -47,8 +52,13 @@ Usage:
 Commands:
   doctor                     Check local setup, build output, env, and API coverage files
   setup                      Create .env when needed, optionally collect credentials, build, and print next steps
+  connect                    Interactive setup plus client config generation
+  first-run                  Run the beginner setup validator and print the next best command
+  ready                      Fast readiness check for local setup and optional live auth
+  demo                       Print the MCP Apps demo/preview command and URL
   agent-check                Run safe setup validation for AI/dev agents
   auth-check                 Run a read-only GHL API token/location check
+  explain-error <message>    Explain a common setup or GHL API error with next steps
   list-tools                 List MCP tools from the built registry
   test-tool <name> [json]    Execute one tool locally with JSON arguments
   env-template               Print a minimal .env template
@@ -64,6 +74,9 @@ Options:
   --skip-tests               Skip npm test in agent-check
   --with-apps                Include MCP Apps install/build in setup or agent-check
   --write-report             Write SETUP_STATUS.md from agent-check
+  --write                    Write generated MCP config to --target with backup
+  --target <path>            Target path for --write config output
+  --inline-env               Inline non-secret env values in generated config; keeps API key placeholder
   --fix                      Apply safe local fixes such as creating .env from .env.example
   --ci                       Non-interactive CI-friendly mode
   --no-network               Avoid network checks such as auth-check and npm install
@@ -174,8 +187,87 @@ async function setup(argv) {
   console.log('4. Run npm run configure:codex or another configure:* command for your MCP client.');
 }
 
+async function connect(argv) {
+  const options = parseOptions(argv);
+  const client = options.client || argv.find((item) => !item.startsWith('--')) || 'codex';
+  const profile = options.profile || 'curated';
+  const validation = await buildAgentCheckPayload({
+    ...options,
+    client,
+    profile,
+    skipTests: options.skipTests ?? true,
+  });
+  const config = buildConfig(client, profile, { inlineEnv: options.inlineEnv });
+  const payload = {
+    command: 'connect',
+    client,
+    profile,
+    grade: setupGrade(validation),
+    status: validation.status,
+    config,
+    nextSteps: [
+      `Paste this config into ${client}.`,
+      'Run npm run ready after credentials are present.',
+      'Run npm run smoke:ghl-live for read-only live coverage checks.',
+    ],
+    remainingHumanActions: validation.remainingHumanActions,
+    apiVersionNote: apiVersionNote(),
+  };
+  printPayload(payload, options.json);
+  if (validation.status === 'fail') process.exitCode = 1;
+}
+
+async function firstRun(argv) {
+  const options = parseOptions(argv);
+  const payload = await buildAgentCheckPayload({ ...options, client: options.client || 'codex' });
+  const result = {
+    command: 'first-run',
+    grade: setupGrade(payload),
+    nextCommand: nextCommandForGrade(payload),
+    ...payload,
+  };
+  printPayload(result, options.json);
+  if (result.grade === 'missing-build' || result.grade === 'unsupported-node') process.exitCode = 1;
+}
+
+async function ready(argv) {
+  const options = parseOptions(argv);
+  const payload = await buildAgentCheckPayload({ ...options, client: options.client || 'codex' });
+  const result = {
+    command: 'ready',
+    grade: setupGrade(payload),
+    ...payload,
+  };
+  printPayload(result, options.json);
+  if (['invalid-credentials', 'missing-build', 'unsupported-node'].includes(result.grade)) process.exitCode = 1;
+}
+
+function demo(argv) {
+  const options = parseOptions(argv);
+  const payload = {
+    command: 'demo',
+    url: 'http://localhost:3001/preview',
+    mode: 'demo-data',
+    commands: ['npm run apps:setup', 'npm run apps:preview'],
+    note: 'The MCP Apps preview works without GHL credentials using demo/preview data.',
+  };
+  printPayload(payload, options.json);
+}
+
 async function agentCheck(argv) {
   const options = parseOptions(argv);
+  const payload = await buildAgentCheckPayload(options);
+
+  if (options.writeReport) writeSetupStatus(payload);
+  if (options.json) {
+    console.log(JSON.stringify(payload, null, 2));
+  } else {
+    printAgentCheck(payload);
+  }
+  if (payload.status === 'fail') process.exitCode = 1;
+}
+
+async function buildAgentCheckPayload(options) {
   const client = options.client || 'codex';
   const steps = [];
   const safety = { destructiveToolsRun: false, writeToolsRun: false };
@@ -207,7 +299,7 @@ async function agentCheck(argv) {
   const config = buildConfig(client, options.profile || 'curated');
   const hardFailure = steps.some((step) => !step.ok) || doctorResult.status === 'fail' || auth.ok === false;
   const status = hardFailure ? 'fail' : doctorResult.status === 'needsHumanAction' || auth.status === 'skipped' ? 'needsHumanAction' : 'ok';
-  const payload = {
+  return {
     status,
     mode: options.noNetwork ? 'no-network' : hasCredentials ? 'credentials-provided' : 'no-credentials',
     steps,
@@ -217,14 +309,6 @@ async function agentCheck(argv) {
     safety,
     remainingHumanActions: remainingActions(doctorResult, auth),
   };
-
-  if (options.writeReport) writeSetupStatus(payload);
-  if (options.json) {
-    console.log(JSON.stringify(payload, null, 2));
-  } else {
-    printAgentCheck(payload);
-  }
-  if (status === 'fail') process.exitCode = 1;
 }
 
 async function authCheck() {
@@ -307,13 +391,27 @@ function configure(argv) {
   const options = parseOptions(argv);
   const client = (argv.find((item) => !item.startsWith('--') && !['curated', 'stable', 'full', 'official', 'raw'].includes(item)) || 'codex').toLowerCase();
   const profile = options.profile || 'curated';
-  const config = buildConfig(client, profile);
+  const config = buildConfig(client, profile, { inlineEnv: options.inlineEnv });
+  if (options.write) {
+    const target = options.target ? resolve(repoRoot, options.target) : join(repoRoot, `${client}-mcp-config.json`);
+    const backup = writeConfigFile(target, config);
+    const payload = { client, profile, config, wrote: target, backup, apiVersionNote: apiVersionNote() };
+    printPayload(payload, options.json);
+    return;
+  }
   if (options.json) {
     console.log(JSON.stringify({ client, profile, config, apiVersionNote: apiVersionNote() }, null, 2));
     return;
   }
   console.log(JSON.stringify(config, null, 2));
   console.log(`\nUsing GHL_TOOL_PROFILE=${profile}. ${apiVersionNote()}`);
+}
+
+function explainError(argv) {
+  const options = parseOptions(argv);
+  const message = argv.filter((item) => !item.startsWith('--')).join(' ') || 'unknown';
+  const payload = explainErrorMessage(message);
+  printPayload(payload, options.json);
 }
 
 function updateApi(argv) {
@@ -473,6 +571,8 @@ function parseOptions(argv) {
     if (item === '--skip-tests') options.skipTests = true;
     if (item === '--with-apps') options.withApps = true;
     if (item === '--write-report') options.writeReport = true;
+    if (item === '--write') options.write = true;
+    if (item === '--inline-env') options.inlineEnv = true;
     if (item === '--destructive') options.destructive = true;
     if (item === '--fix') options.fix = true;
     if (item === '--ci') options.ci = true;
@@ -480,6 +580,7 @@ function parseOptions(argv) {
     if (item === '--non-interactive') options.nonInteractive = true;
     if (item === '--profile') options.profile = argv[++i] || 'curated';
     if (item === '--client') options.client = (argv[++i] || 'codex').toLowerCase();
+    if (item === '--target') options.target = argv[++i] || '';
     if (item === '--search') options.search = argv[++i] || '';
     if (item === '--category') options.category = argv[++i] || '';
     if (item === '--access') options.access = argv[++i] || '';
@@ -537,7 +638,7 @@ function apiVersionNote() {
   return 'GHL_API_VERSION=2023-02-21 is the HighLevel API Version header, not the project year; do not change it to 2026 unless HighLevel publishes a new required API version.';
 }
 
-function buildConfig(client, profile) {
+function buildConfig(client, profile, buildOptions = {}) {
   if (!['codex', 'claude', 'cursor', 'windsurf'].includes(client)) fail('Supported clients: codex, claude, cursor, windsurf');
   if (!['curated', 'stable', 'full', 'official', 'raw'].includes(profile)) fail('Supported profiles: curated, stable, full, official, raw');
   return {
@@ -547,7 +648,7 @@ function buildConfig(client, profile) {
         args: [join(repoRoot, 'dist/server.js')],
         env: {
           GHL_API_KEY: '${GHL_API_KEY}',
-          GHL_LOCATION_ID: '${GHL_LOCATION_ID}',
+          GHL_LOCATION_ID: buildOptions.inlineEnv ? (process.env.GHL_LOCATION_ID || '${GHL_LOCATION_ID}') : '${GHL_LOCATION_ID}',
           GHL_BASE_URL: process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com',
           GHL_API_VERSION: process.env.GHL_API_VERSION || '2023-02-21',
           GHL_TOOL_PROFILE: profile,
@@ -555,6 +656,100 @@ function buildConfig(client, profile) {
       },
     },
   };
+}
+
+function writeConfigFile(target, config) {
+  mkdirSync(dirname(target), { recursive: true });
+  const backup = existsSync(target) ? `${target}.bak` : null;
+  if (backup) copyFileSync(target, backup);
+  writeFileSync(target, JSON.stringify(config, null, 2) + '\n');
+  return backup;
+}
+
+function setupGrade(payload) {
+  if (payload.steps.some((step) => step.name === 'Node >= 20' && !step.ok)) return 'unsupported-node';
+  if (payload.steps.some((step) => step.name === 'npm run build' && !step.ok)) return 'missing-build';
+  if (payload.auth.status === 'fail') return 'invalid-credentials';
+  if (payload.doctor.status === 'needsHumanAction') return 'needs-credentials';
+  if (payload.auth.status === 'skipped') return 'ready-no-live-auth';
+  if (payload.status === 'ok') return 'ready';
+  return payload.status;
+}
+
+function nextCommandForGrade(payload) {
+  const grade = setupGrade(payload);
+  if (grade === 'needs-credentials') return `Add GHL_API_KEY and GHL_LOCATION_ID to .env, then run npm run ready. You can still run npm run configure:${payload.config.client} now for placeholder MCP config.`;
+  if (grade === 'ready-no-live-auth') return 'Run npm run auth-check when network access and credentials are available.';
+  if (grade === 'invalid-credentials') return 'Run npm run explain-error with the auth error, then verify the token and Location ID in HighLevel.';
+  if (grade === 'missing-build') return 'Run npm run build.';
+  if (grade === 'unsupported-node') return 'Install Node 20 or newer.';
+  return `Paste the ${payload.config.client} MCP config from npm run configure:${payload.config.client}.`;
+}
+
+function explainErrorMessage(message) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes('location is not active')) {
+    return {
+      code: 'location-inactive',
+      meaning: 'HighLevel accepted the request shape but the configured Location ID is inactive or unavailable to this token.',
+      nextSteps: [
+        'Confirm the Location ID belongs to an active HighLevel sub-account.',
+        'Confirm the private integration token has access to that Location ID.',
+        'Run npm run auth-check again after the location is active.',
+      ],
+    };
+  }
+  if (normalized.includes('companyid')) {
+    return {
+      code: 'company-id-required',
+      meaning: 'The endpoint needs a HighLevel companyId. The live smoke command derives it from the location response.',
+      nextSteps: ['Run npm run smoke:ghl-live with a valid Location ID.', 'For direct user search calls, include companyId when the endpoint requires it.'],
+    };
+  }
+  if (normalized.includes('unauthorized') || normalized.includes('401')) {
+    return {
+      code: 'unauthorized',
+      meaning: 'The token does not have access to the requested resource or scope.',
+      nextSteps: ['Verify the token is active.', 'Verify scopes and location access.', 'Run npm run auth-check.'],
+    };
+  }
+  if (normalized.includes('dist/server.js') || normalized.includes('build')) {
+    return {
+      code: 'missing-build',
+      meaning: 'The MCP client points at built output that does not exist yet.',
+      nextSteps: ['Run npm run build.', 'Regenerate client config after the build succeeds.'],
+    };
+  }
+  if (normalized.includes('node')) {
+    return {
+      code: 'unsupported-node',
+      meaning: 'This repo expects Node 20 or newer.',
+      nextSteps: ['Install Node 20+.', 'Run npm install again after switching Node versions.'],
+    };
+  }
+  return {
+    code: 'unknown',
+    meaning: 'This is not one of the known setup errors yet.',
+    nextSteps: ['Run npm run doctor -- --json.', 'Run npm run agent:check -- --json.', 'Use the first failing check as the next fix.'],
+  };
+}
+
+function printPayload(payload, json) {
+  if (json) {
+    console.log(JSON.stringify(payload, null, 2));
+    return;
+  }
+  if (payload.command) console.log(`${payload.command}: ${payload.grade || payload.mode || 'ok'}`);
+  if (payload.url) console.log(payload.url);
+  if (payload.nextCommand) console.log(`next: ${payload.nextCommand}`);
+  if (payload.code) {
+    console.log(`${payload.code}: ${payload.meaning}`);
+    for (const step of payload.nextSteps || []) console.log(`- ${step}`);
+  }
+  if (payload.wrote) {
+    console.log(`Wrote ${payload.wrote}`);
+    if (payload.backup) console.log(`Backup ${payload.backup}`);
+  }
 }
 
 function runStep(label, command, actions) {

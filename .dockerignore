@@ -1,0 +1,11 @@
+node_modules
+mcp-apps/node_modules
+dist
+mcp-apps/dist
+coverage
+.git
+.env
+.env.*
+npm-debug.log*
+tmp
+temp

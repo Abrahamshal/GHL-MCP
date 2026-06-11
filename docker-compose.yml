@@ -1,0 +1,10 @@
+services:
+  ghl-mcp:
+    build: .
+    env_file:
+      - .env
+    environment:
+      MCP_SERVER_PORT: "8000"
+      GHL_TOOL_PROFILE: "${GHL_TOOL_PROFILE:-curated}"
+    ports:
+      - "8000:8000"

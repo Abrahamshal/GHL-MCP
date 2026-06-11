@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { createInterface } from 'node:readline/promises';
+import { stdin as input, stdout as output } from 'node:process';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -13,7 +15,9 @@ loadDotEnv();
 
 const commands = {
   help,
+  setup,
   doctor,
+  'agent-check': agentCheck,
   'auth-check': authCheck,
   'list-tools': listTools,
   'test-tool': testTool,
@@ -42,6 +46,8 @@ Usage:
 
 Commands:
   doctor                     Check local setup, build output, env, and API coverage files
+  setup                      Create .env when needed, optionally collect credentials, build, and print next steps
+  agent-check                Run safe setup validation for AI/dev agents
   auth-check                 Run a read-only GHL API token/location check
   list-tools                 List MCP tools from the built registry
   test-tool <name> [json]    Execute one tool locally with JSON arguments
@@ -53,36 +59,172 @@ Commands:
 
 Options:
   --json                     Emit JSON where supported
+  --profile <name>           Tool profile for generated config: curated, stable, full, official, raw
+  --client <name>            MCP client for agent-check: codex, claude, cursor, windsurf
+  --skip-tests               Skip npm test in agent-check
+  --with-apps                Include MCP Apps install/build in setup or agent-check
+  --write-report             Write SETUP_STATUS.md from agent-check
+  --fix                      Apply safe local fixes such as creating .env from .env.example
+  --ci                       Non-interactive CI-friendly mode
+  --no-network               Avoid network checks such as auth-check and npm install
   --search <text>            Filter list-tools output
   --category <name>          Filter list-tools output by category/module
+  --access <name>            Filter list-tools output by read, write, or delete
   --stability <tier>         Filter by official, live-docs-supplemental, legacy-compatible, private-or-unstable, deprecated
+  --destructive              Filter list-tools output to destructive tools
   --confirm                  Allow test-tool to run write/destructive tools
 `;
 }
 
 async function doctor() {
+  const options = parseOptions(args.slice(1));
+  const result = getDoctorResult();
+  if (options.json) {
+    console.log(JSON.stringify(result, null, 2));
+    if (result.status === 'fail') process.exitCode = 1;
+    return;
+  }
+
+  printChecks(result.checks);
+  printDoctorNextSteps(result);
+  if (result.status === 'fail') process.exitCode = 1;
+}
+
+function getDoctorResult() {
   const pkg = readJson('package.json');
   const coverage = readCoverage();
   const checks = [
-    check('Node >= 18', Number(process.versions.node.split('.')[0]) >= 18, process.version),
+    check('Node >= 20', Number(process.versions.node.split('.')[0]) >= 20, process.version, 'Install Node 20 or newer, then rerun npm install.'),
     check('package.json', Boolean(pkg.name), pkg.name || 'missing'),
-    check('dist/server.js', existsSync(join(repoRoot, 'dist/server.js')), existsSync(join(repoRoot, 'dist/server.js')) ? 'present' : 'run npm run build'),
-    check('dist/main.js', existsSync(join(repoRoot, 'dist/main.js')), existsSync(join(repoRoot, 'dist/main.js')) ? 'present' : 'run npm run build'),
-    check('coverage report', Boolean(coverage), 'docs/ghl-api-coverage.json'),
-    check('GHL_API_KEY', Boolean(process.env.GHL_API_KEY), mask(process.env.GHL_API_KEY)),
-    check('GHL_LOCATION_ID', Boolean(process.env.GHL_LOCATION_ID), process.env.GHL_LOCATION_ID || 'missing'),
-    check('GHL_API_VERSION', Boolean(process.env.GHL_API_VERSION || '2023-02-21'), process.env.GHL_API_VERSION || '2023-02-21'),
+    check('dist/server.js', existsSync(join(repoRoot, 'dist/server.js')), existsSync(join(repoRoot, 'dist/server.js')) ? 'present' : 'run npm run build', 'Run npm run build from the repo root.'),
+    check('dist/main.js', existsSync(join(repoRoot, 'dist/main.js')), existsSync(join(repoRoot, 'dist/main.js')) ? 'present' : 'run npm run build', 'Run npm run build from the repo root.'),
+    check('coverage report', Boolean(coverage), 'docs/ghl-api-coverage.json', 'Run npm run scan:ghl-api only if generated coverage artifacts are missing or intentionally refreshed.'),
+    check('GHL_API_KEY', Boolean(process.env.GHL_API_KEY), mask(process.env.GHL_API_KEY), 'Add GHL_API_KEY to .env. Use a HighLevel private integration or OAuth access token.'),
+    check('GHL_LOCATION_ID', Boolean(process.env.GHL_LOCATION_ID), process.env.GHL_LOCATION_ID || 'missing', 'Add GHL_LOCATION_ID to .env. In HighLevel this is the sub-account Location ID.'),
+    check('GHL_API_VERSION', Boolean(process.env.GHL_API_VERSION || '2023-02-21'), process.env.GHL_API_VERSION || '2023-02-21', 'Keep 2023-02-21 unless HighLevel publishes a new required Version header.'),
   ];
 
   if (coverage) {
     checks.push(
-      check('official endpoint coverage', coverage.comparison?.coveragePercent === 100, `${coverage.comparison?.coveredCount || 0}/${coverage.comparison?.officialUniqueCount || 0}`),
-      check('generated official tools data', existsSync(join(repoRoot, 'src/tools/official-spec-endpoints.json')), 'src/tools/official-spec-endpoints.json')
+      check('official endpoint coverage', coverage.comparison?.coveragePercent === 100, `${coverage.comparison?.coveredCount || 0}/${coverage.comparison?.officialUniqueCount || 0}`, 'Run npm run scan:ghl-api if official API coverage intentionally changed.'),
+      check('generated official tools data', existsSync(join(repoRoot, 'src/tools/official-spec-endpoints.json')), 'src/tools/official-spec-endpoints.json', 'Run npm run scan:ghl-api to regenerate official endpoint tool data.')
     );
   }
 
-  printChecks(checks);
-  if (checks.some((item) => !item.ok)) process.exitCode = 1;
+  const missingCredentials = checks.some((item) => ['GHL_API_KEY', 'GHL_LOCATION_ID'].includes(item.name) && !item.ok);
+  const hardFailures = checks.some((item) => !item.ok && !['GHL_API_KEY', 'GHL_LOCATION_ID'].includes(item.name));
+  return {
+    status: hardFailures ? 'fail' : missingCredentials ? 'needsHumanAction' : 'ok',
+    summary: {
+      total: checks.length,
+      passed: checks.filter((item) => item.ok).length,
+      failed: checks.filter((item) => !item.ok).length,
+      needsHumanAction: checks.filter((item) => ['GHL_API_KEY', 'GHL_LOCATION_ID'].includes(item.name) && !item.ok).length,
+    },
+    checks,
+    apiVersionNote: 'GHL_API_VERSION=2023-02-21 is the HighLevel API Version header, not the project year. Do not change it to 2026 unless HighLevel publishes a new required API version.',
+  };
+}
+
+async function setup(argv) {
+  const options = parseOptions(argv);
+  const interactive = !options.ci && !options.nonInteractive && process.stdin.isTTY;
+  const envPath = join(repoRoot, '.env');
+  const actions = [];
+
+  if (!existsSync(envPath)) {
+    copyFileSync(join(repoRoot, '.env.example'), envPath);
+    actions.push('Created .env from .env.example');
+  }
+
+  if (interactive) {
+    const rl = createInterface({ input, output });
+    const updates = {};
+    if (!process.env.GHL_API_KEY) {
+      const value = await rl.question('GHL_API_KEY (leave blank to skip): ');
+      if (value.trim()) updates.GHL_API_KEY = value.trim();
+    }
+    if (!process.env.GHL_LOCATION_ID) {
+      const value = await rl.question('GHL_LOCATION_ID (leave blank to skip): ');
+      if (value.trim()) updates.GHL_LOCATION_ID = value.trim();
+    }
+    rl.close();
+    if (Object.keys(updates).length) {
+      mergeDotEnv(updates);
+      Object.assign(process.env, updates);
+      actions.push(`Updated .env with ${Object.keys(updates).join(', ')}`);
+    }
+  }
+
+  if (!options.noNetwork && !existsSync(join(repoRoot, 'node_modules'))) {
+    runStep('npm install', ['npm', ['install']], actions);
+  }
+  runStep('npm run build', ['npm', ['run', 'build']], actions);
+  if (options.withApps) {
+    if (!options.noNetwork && !existsSync(join(repoRoot, 'mcp-apps', 'node_modules'))) runStep('npm run apps:install', ['npm', ['run', 'apps:install']], actions);
+    runStep('npm run apps:build', ['npm', ['run', 'apps:build']], actions);
+  }
+
+  console.log('Setup complete.');
+  for (const action of actions) console.log(`ok ${action}`);
+  console.log('\nNext steps:');
+  console.log('1. Add GHL_API_KEY and GHL_LOCATION_ID to .env if they are still placeholders.');
+  console.log('2. Run npm run doctor.');
+  console.log('3. Run npm run auth-check when credentials are present.');
+  console.log('4. Run npm run configure:codex or another configure:* command for your MCP client.');
+}
+
+async function agentCheck(argv) {
+  const options = parseOptions(argv);
+  const client = options.client || 'codex';
+  const steps = [];
+  const safety = { destructiveToolsRun: false, writeToolsRun: false };
+
+  if (options.fix && !existsSync(join(repoRoot, '.env'))) {
+    copyFileSync(join(repoRoot, '.env.example'), join(repoRoot, '.env'));
+    steps.push(stepResult('create .env', true, 'Created .env from .env.example'));
+  }
+
+  steps.push(stepResult('Node >= 20', Number(process.versions.node.split('.')[0]) >= 20, process.version));
+  steps.push(stepResult('dependencies', existsSync(join(repoRoot, 'node_modules')) || options.noNetwork, existsSync(join(repoRoot, 'node_modules')) ? 'node_modules present' : options.noNetwork ? 'skipped because --no-network was set' : 'node_modules missing'));
+
+  if (!options.noNetwork && !existsSync(join(repoRoot, 'node_modules'))) {
+    steps.push(runCheckStep('npm install', 'npm', ['install']));
+  }
+  steps.push(runCheckStep('npm run build', 'npm', ['run', 'build']));
+  steps.push(runCheckStep('npm run lint', 'npm', ['run', 'lint']));
+  if (!options.skipTests) steps.push(runCheckStep('npm test', 'npm', ['test']));
+  if (options.withApps) {
+    if (!options.noNetwork && !existsSync(join(repoRoot, 'mcp-apps', 'node_modules'))) steps.push(runCheckStep('npm run apps:install', 'npm', ['run', 'apps:install']));
+    steps.push(runCheckStep('npm run apps:build', 'npm', ['run', 'apps:build']));
+  }
+
+  const doctorResult = getDoctorResult();
+  const hasCredentials = Boolean(process.env.GHL_API_KEY && process.env.GHL_LOCATION_ID);
+  const auth = hasCredentials && !options.noNetwork
+    ? runCheckStep('auth-check', process.execPath, [cliPath(), 'auth-check'])
+    : stepResult('auth-check', true, hasCredentials ? 'skipped because --no-network was set' : 'skipped until GHL_API_KEY and GHL_LOCATION_ID are provided', 'skipped');
+  const config = buildConfig(client, options.profile || 'curated');
+  const hardFailure = steps.some((step) => !step.ok) || doctorResult.status === 'fail' || auth.ok === false;
+  const status = hardFailure ? 'fail' : doctorResult.status === 'needsHumanAction' || auth.status === 'skipped' ? 'needsHumanAction' : 'ok';
+  const payload = {
+    status,
+    mode: options.noNetwork ? 'no-network' : hasCredentials ? 'credentials-provided' : 'no-credentials',
+    steps,
+    doctor: doctorResult,
+    auth,
+    config: { client, profile: options.profile || 'curated', config },
+    safety,
+    remainingHumanActions: remainingActions(doctorResult, auth),
+  };
+
+  if (options.writeReport) writeSetupStatus(payload);
+  if (options.json) {
+    console.log(JSON.stringify(payload, null, 2));
+  } else {
+    printAgentCheck(payload);
+  }
+  if (status === 'fail') process.exitCode = 1;
 }
 
 async function authCheck() {
@@ -113,7 +255,9 @@ async function listTools(argv) {
   const filtered = inventory.filter((tool) => {
     if (options.search && !`${tool.name} ${tool.description} ${tool.category}`.toLowerCase().includes(options.search.toLowerCase())) return false;
     if (options.category && tool.category !== options.category && tool.module !== options.category) return false;
+    if (options.access && tool.access !== options.access) return false;
     if (options.stability && tool.stability !== options.stability) return false;
+    if (options.destructive && !tool.destructive) return false;
     return true;
   });
 
@@ -160,26 +304,16 @@ NODE_ENV=development`);
 }
 
 function configure(argv) {
-  const client = (argv[0] || 'codex').toLowerCase();
-  const config = {
-    mcpServers: {
-      ghl: {
-        command: 'node',
-        args: [join(repoRoot, 'dist/server.js')],
-        env: {
-          GHL_API_KEY: '${GHL_API_KEY}',
-          GHL_LOCATION_ID: '${GHL_LOCATION_ID}',
-          GHL_BASE_URL: process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com',
-          GHL_API_VERSION: process.env.GHL_API_VERSION || '2023-02-21',
-        },
-      },
-    },
-  };
-
-  if (!['codex', 'cursor', 'windsurf'].includes(client)) {
-    fail('Supported clients: codex, cursor, windsurf');
+  const options = parseOptions(argv);
+  const client = (argv.find((item) => !item.startsWith('--') && !['curated', 'stable', 'full', 'official', 'raw'].includes(item)) || 'codex').toLowerCase();
+  const profile = options.profile || 'curated';
+  const config = buildConfig(client, profile);
+  if (options.json) {
+    console.log(JSON.stringify({ client, profile, config, apiVersionNote: apiVersionNote() }, null, 2));
+    return;
   }
   console.log(JSON.stringify(config, null, 2));
+  console.log(`\nUsing GHL_TOOL_PROFILE=${profile}. ${apiVersionNote()}`);
 }
 
 function updateApi(argv) {
@@ -336,21 +470,45 @@ function parseOptions(argv) {
     if (item === '--json') options.json = true;
     if (item === '--confirm') options.confirm = true;
     if (item === '--check') options.check = true;
+    if (item === '--skip-tests') options.skipTests = true;
+    if (item === '--with-apps') options.withApps = true;
+    if (item === '--write-report') options.writeReport = true;
+    if (item === '--destructive') options.destructive = true;
+    if (item === '--fix') options.fix = true;
+    if (item === '--ci') options.ci = true;
+    if (item === '--no-network') options.noNetwork = true;
+    if (item === '--non-interactive') options.nonInteractive = true;
+    if (item === '--profile') options.profile = argv[++i] || 'curated';
+    if (item === '--client') options.client = (argv[++i] || 'codex').toLowerCase();
     if (item === '--search') options.search = argv[++i] || '';
     if (item === '--category') options.category = argv[++i] || '';
+    if (item === '--access') options.access = argv[++i] || '';
     if (item === '--stability') options.stability = argv[++i] || '';
   }
   return options;
 }
 
-function check(name, ok, detail) {
-  return { name, ok, detail };
+function check(name, ok, detail, nextStep = '') {
+  return { name, ok, detail, nextStep: ok ? '' : nextStep };
 }
 
 function printChecks(checks) {
   for (const item of checks) {
     console.log(`${item.ok ? 'ok' : 'fail'} ${item.name}: ${item.detail}`);
+    if (!item.ok && item.nextStep) console.log(`  next: ${item.nextStep}`);
   }
+}
+
+function printDoctorNextSteps(result) {
+  if (result.status === 'ok') {
+    console.log('\nReady. Next: npm run auth-check, then npm run configure:codex.');
+    return;
+  }
+  console.log('\nNext steps:');
+  for (const item of result.checks.filter((check) => !check.ok && check.nextStep)) {
+    console.log(`- ${item.nextStep}`);
+  }
+  console.log(`- ${apiVersionNote()}`);
 }
 
 function countBy(items, key) {
@@ -369,6 +527,113 @@ function requireEnv(name) {
 function mask(value) {
   if (!value) return 'missing';
   return `${value.slice(0, 4)}...${value.slice(-4)}`;
+}
+
+function cliPath() {
+  return join(repoRoot, 'scripts', 'ghl-mcp.mjs');
+}
+
+function apiVersionNote() {
+  return 'GHL_API_VERSION=2023-02-21 is the HighLevel API Version header, not the project year; do not change it to 2026 unless HighLevel publishes a new required API version.';
+}
+
+function buildConfig(client, profile) {
+  if (!['codex', 'claude', 'cursor', 'windsurf'].includes(client)) fail('Supported clients: codex, claude, cursor, windsurf');
+  if (!['curated', 'stable', 'full', 'official', 'raw'].includes(profile)) fail('Supported profiles: curated, stable, full, official, raw');
+  return {
+    mcpServers: {
+      ghl: {
+        command: 'node',
+        args: [join(repoRoot, 'dist/server.js')],
+        env: {
+          GHL_API_KEY: '${GHL_API_KEY}',
+          GHL_LOCATION_ID: '${GHL_LOCATION_ID}',
+          GHL_BASE_URL: process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com',
+          GHL_API_VERSION: process.env.GHL_API_VERSION || '2023-02-21',
+          GHL_TOOL_PROFILE: profile,
+        },
+      },
+    },
+  };
+}
+
+function runStep(label, command, actions) {
+  const [cmd, commandArgs] = command;
+  const result = spawnSync(cmd, commandArgs, { cwd: repoRoot, stdio: 'inherit', shell: false });
+  if (result.status !== 0) process.exit(result.status || 1);
+  actions.push(label);
+}
+
+function runCheckStep(name, cmd, commandArgs) {
+  const result = spawnSync(cmd, commandArgs, { cwd: repoRoot, encoding: 'utf8', shell: false });
+  return stepResult(name, result.status === 0, result.status === 0 ? 'passed' : (result.stderr || result.stdout || 'failed').slice(0, 800));
+}
+
+function stepResult(name, ok, detail, status) {
+  return { name, ok, status: status || (ok ? 'ok' : 'fail'), detail };
+}
+
+function remainingActions(doctorResult, auth) {
+  const actions = doctorResult.checks.filter((item) => !item.ok && item.nextStep).map((item) => item.nextStep);
+  if (auth.status === 'skipped') actions.push('Run npm run auth-check after adding real GHL credentials.');
+  if (auth.status === 'fail') actions.push('Verify that GHL_API_KEY is active and has access to the configured GHL_LOCATION_ID. HighLevel returned an auth/location error.');
+  return [...new Set(actions)];
+}
+
+function printAgentCheck(payload) {
+  console.log(`agent-check: ${payload.status}`);
+  for (const step of payload.steps) console.log(`${step.ok ? 'ok' : 'fail'} ${step.name}: ${step.detail}`);
+  console.log(`${payload.auth.ok ? 'ok' : 'fail'} ${payload.auth.name}: ${payload.auth.detail}`);
+  console.log(`config: ${payload.config.client} (${payload.config.profile})`);
+  if (payload.remainingHumanActions.length) {
+    console.log('\nRemaining human actions:');
+    for (const action of payload.remainingHumanActions) console.log(`- ${action}`);
+  }
+}
+
+function writeSetupStatus(payload) {
+  const lines = [
+    '# Setup Status',
+    '',
+    `Status: ${payload.status}`,
+    `Mode: ${payload.mode}`,
+    '',
+    '## Checks',
+    ...payload.steps.map((step) => `- ${step.ok ? 'ok' : 'fail'} ${step.name}: ${step.detail}`),
+    `- ${payload.auth.ok ? 'ok' : 'fail'} ${payload.auth.name}: ${payload.auth.detail}`,
+    '',
+    '## MCP Config',
+    `- Client: ${payload.config.client}`,
+    `- Tool profile: ${payload.config.profile}`,
+    `- Server path: ${payload.config.config.mcpServers.ghl.args[0]}`,
+    '',
+    '## Safety',
+    `- Destructive tools run: ${payload.safety.destructiveToolsRun ? 'yes' : 'no'}`,
+    `- Write tools run: ${payload.safety.writeToolsRun ? 'yes' : 'no'}`,
+    '',
+    '## Remaining Human Actions',
+    ...(payload.remainingHumanActions.length ? payload.remainingHumanActions.map((action) => `- ${action}`) : ['- None']),
+    '',
+    apiVersionNote(),
+    '',
+  ];
+  writeFileSync(join(repoRoot, 'SETUP_STATUS.md'), lines.join('\n'));
+}
+
+function mergeDotEnv(updates) {
+  const envPath = join(repoRoot, '.env');
+  const existing = existsSync(envPath) ? readFileSync(envPath, 'utf8').split(/\r?\n/) : [];
+  const seen = new Set();
+  const next = existing.map((line) => {
+    const key = line.includes('=') ? line.slice(0, line.indexOf('=')).trim() : '';
+    if (!Object.prototype.hasOwnProperty.call(updates, key)) return line;
+    seen.add(key);
+    return `${key}=${updates[key]}`;
+  });
+  for (const [key, value] of Object.entries(updates)) {
+    if (!seen.has(key)) next.push(`${key}=${value}`);
+  }
+  writeFileSync(envPath, next.join('\n').replace(/\n*$/, '\n'));
 }
 
 function fail(message) {

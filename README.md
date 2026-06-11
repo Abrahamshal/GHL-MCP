@@ -1,146 +1,28 @@
 # GoHighLevel MCP Server
 
-Model Context Protocol server for GoHighLevel. It exposes GHL API operations as MCP tools over stdio, Streamable HTTP, and legacy SSE.
+Model Context Protocol server for GoHighLevel. It exposes GHL API operations as MCP tools over stdio, Streamable HTTP, legacy SSE, and optional MCP Apps.
 
-## Current API Coverage
+New here? Start with [QUICKSTART.md](QUICKSTART.md).
 
-- Official GHL endpoints parsed: `590`
-- Official endpoint coverage: `590 / 590`
-- Generated official endpoint tools: `238`
-- MCP tools in registry: `848` (`816` raw API tools plus `32` curated agent workflow tools)
-- Local-only endpoint references tracked for review: `253`
-- Daily GitHub Actions refresh opens a PR when the official GHL API docs change.
+Using an AI/dev agent? Give it [AGENT_SETUP.md](AGENT_SETUP.md) and say: "Set this up for my MCP client using the curated profile. Ask me for credentials if needed. Do not run write tools."
 
-Coverage artifacts:
+## 5-Minute Quickstart
 
-- `docs/GHL-API-COVERAGE-REPORT.md`
-- `docs/GHL-LOCAL-ENDPOINT-CLASSIFICATION.md`
-- `docs/api-sources.lock.json`
-- `docs/ghl-api-coverage.json`
-- `docs/API-DASHBOARD.md`
-- `docs/tool-inventory.json`
+Requirements:
 
-## Companion Tooling
-
-The MCP server stays focused on MCP transports and GHL tool execution. Companion tooling lives beside it for setup, inspection, updates, and examples.
-
-```bash
-npm run tools:doctor       # Check build output, env, and API coverage health
-npm run tools:list         # Browse the registered MCP tool inventory
-npm run tools:report       # Regenerate the API dashboard and tool inventory JSON
-npm run tools:explorer     # Print the local static tool explorer path
-npm run tools:configure    # Print a Codex-compatible MCP config snippet
-npm run tools:update-api   # Refresh official GHL API coverage and generated tools
-```
-
-Direct CLI usage:
-
-```bash
-npx ghl-mcp doctor
-npx ghl-mcp list-tools --search ads
-npx ghl-mcp configure codex
-npx ghl-mcp test-tool search_contacts '{"locationId":"your_location_id","pageLimit":1}'
-```
-
-See `docs/TOOLING.md` for the full tooling map.
-
-## Contributors
-
-See [CONTRIBUTORS.md](CONTRIBUTORS.md) for contributor acknowledgements.
-
-## Agent Tool Profiles
-
-By default, the server exposes the full tool surface: raw endpoint tools plus the curated CRM workflow layer. Agents that work better with fewer, higher-level actions or stricter stability boundaries can use:
-
-```bash
-GHL_TOOL_PROFILE=curated npm run start:stdio
-GHL_TOOL_PROFILE=stable npm run start:stdio
-GHL_TOOL_PROFILE=official npm run start:stdio
-```
-
-Profiles:
-
-- `full` - default; exposes all `848` tools.
-- `curated` - exposes only the `32` agent workspace tools, such as `crm_prepare_lead_intake`, `crm_prepare_conversation_reply`, `crm_prepare_appointment_booking`, and `crm_location_health_check`.
-- `raw` - exposes only the original `816` endpoint-level tools.
-- `official` - exposes explicit official OpenAPI and live-docs supplemental tools only.
-- `stable` - exposes official, live-docs supplemental, curated, and legacy-compatible tools while hiding deprecated and private/unstable surfaces.
-
-Every tool inventory entry includes a `stability` tier: `official`, `live-docs-supplemental`, `legacy-compatible`, `private-or-unstable`, or `deprecated`.
-
-The curated tools return structured confirmation queues for writes. They stage the exact raw tool calls an agent should execute after the user confirms, instead of making outbound messages, billing, workflow enrollment, stage moves, or snapshot pushes feel like one ambiguous API call.
-
-## Recipes And Agent Starters
-
-The `examples/` directory turns the tool surface into practical MCP workflows:
-
-- `examples/recipes/` — structured JSON recipes for lead intake, appointment booking, pipeline follow-up, ads reporting, review requests, location health checks, and more.
-- `examples/agents/` — starter assistant prompts for CRM, appointment setting, pipeline management, ads reporting, and agency operations.
-- `docs/tool-explorer.html` — static browser explorer for `docs/tool-inventory.json`.
-
-Recipes use real MCP tool names and include confirmation points for actions like outbound messages, appointment creation, workflow enrollment, deletes, and snapshot pushes.
-
-## MCP Apps
-
-`mcp-apps/` contains companion MCP Apps for hosts that support interactive MCP resources. They run as a separate app server so the core MCP API server stays lean.
-
-MCP Apps require Node 20+ because they use `@modelcontextprotocol/ext-apps`.
-
-The apps are wired to the curated CRM workflow tools first, so buttons like "Prepare lead intake," "Prepare booking," and "Prepare snapshot rollout" produce confirmation-gated action plans for ChatGPT, Codex, or another MCP host.
-
-```bash
-npm run build
-npm run apps:install
-npm run apps:build
-npm run apps:start:stdio
-```
-
-Included app tools:
-
-- `show_ghl_tool_explorer_app`
-- `show_ghl_contact_workspace_app`
-- `show_ghl_lead_intake_app`
-- `show_ghl_conversation_inbox_app`
-- `show_ghl_pipeline_board_app`
-- `show_ghl_appointment_desk_app`
-- `show_ghl_automation_launcher_app`
-- `show_ghl_reputation_center_app`
-- `show_ghl_ads_dashboard_app`
-- `show_ghl_billing_commerce_app`
-- `show_ghl_agency_admin_app`
-
-See `mcp-apps/README.md` for host config and HTTP mode.
-
-For a normal browser preview:
-
-```bash
-npm run apps:start:http
-```
-
-Open `http://localhost:3001/preview`. The tool explorer links to every CRM workspace preview.
-
-## Transports
-
-- `npm run start:stdio` — stdio MCP server for desktop MCP clients.
-- `npm run start:http` — Streamable HTTP server at `/mcp`.
-- `npm run start:legacy` — legacy SSE server at `/sse`.
-
-The HTTP server also exposes:
-
-- `GET /health`
-- `GET /capabilities`
-- `GET /tools`
-- `POST /execute`
-- `POST /tools/call`
-
-## Setup
+- Node 20+
+- A GoHighLevel private integration token or OAuth access token
+- A GoHighLevel Location ID
 
 ```bash
 npm install
 cp .env.example .env
+npm run build
+npm run doctor
+npm run configure:codex
 ```
 
-Set:
+Add your credentials to `.env`:
 
 ```bash
 GHL_API_KEY=your_private_integration_api_key
@@ -149,93 +31,126 @@ GHL_BASE_URL=https://services.leadconnectorhq.com
 GHL_API_VERSION=2023-02-21
 ```
 
-Build and run:
+`GHL_API_VERSION=2023-02-21` is the current HighLevel API `Version` header used by official docs. It is not the project year, and it should not be changed to 2026 unless HighLevel publishes a new required API version.
+
+Then verify live auth:
 
 ```bash
-npm run build
-npm run start:stdio
+npm run auth-check
 ```
 
-## Verification
+## Setup Commands
 
 ```bash
-npm run scan:ghl-api
-npm run validate:api-lock
-npm test
+npm run setup                 # Create .env if needed, build, and print next steps
+npm run doctor                # Human-readable setup check
+npm run doctor -- --json      # Agent-readable setup check
+npm run agent:check           # Safe validation for AI/dev agents
+npm run auth-check            # Read-only GHL token/location check
 ```
 
-`docs/api-sources.lock.json` records the official docs commit, expected endpoint counts, live-docs supplemental Email V2 pages, and acceptance gates verified on June 10, 2026. CI fails if generated coverage no longer matches this lock.
-
-For HTTP:
-
-```bash
-npm run start:http
-```
+Missing credentials are reported as `needsHumanAction`, not as a broken install. This lets agents build and configure the repo without inventing secrets.
 
 ## MCP Client Config
 
-Example stdio config:
-
-```json
-{
-  "mcpServers": {
-    "ghl": {
-      "command": "node",
-      "args": ["/absolute/path/to/Go-High-Level-MCP-2026-Complete/dist/server.js"],
-      "env": {
-        "GHL_API_KEY": "your_private_integration_api_key",
-        "GHL_LOCATION_ID": "your_location_id",
-        "GHL_BASE_URL": "https://services.leadconnectorhq.com",
-        "GHL_API_VERSION": "2023-02-21"
-      }
-    }
-  }
-}
-```
-
-## Scripts
+Beginner configs use `GHL_TOOL_PROFILE=curated` so agents see the high-level workflow tools first.
 
 ```bash
-npm run build              # Compile server files to dist/
-npm run lint               # Fast TypeScript syntax/transpile check
-npm test                   # Jest tests
-npm run scan:ghl-api       # Refresh official GHL API coverage and generated tools
-npm run ci:ghl-api-drift   # Fail if generated API artifacts are stale
-npm run smoke:ghl-live     # Optional read-only live checks when GHL env vars are set
-npm run tools:doctor       # Check local MCP setup
-npm run tools:report       # Generate API dashboard and tool inventory
-npm run tools:explorer     # Show the static tool explorer file path
+npm run configure:codex
+npm run configure:claude
+npm run configure:cursor
+npm run configure:windsurf
 ```
 
-## Daily API Refresh
+Advanced examples:
 
-`.github/workflows/ghl-api-drift.yml` runs daily. It:
-
-1. Pulls the latest official `GoHighLevel/highlevel-api-docs` snapshot.
-2. Regenerates coverage docs and generated official endpoint tools.
-3. Opens a PR if any generated artifacts changed.
-
-PRs and pushes also run drift checks so stale generated files do not silently land.
-
-## Project Layout
-
-```text
-src/
-  clients/       GHL API clients
-  tools/         MCP tool modules
-  types/         shared TypeScript types
-  main.ts        Streamable HTTP MCP server
-  server.ts      stdio MCP server
-  http-server.ts legacy SSE MCP server
-scripts/         API scanner, generator, build, smoke test
-docs/            generated API coverage reports
-examples/        MCP recipes and starter agent templates
-mcp-apps/        companion MCP Apps server and bundled UI
-tests/           Jest tests
+```bash
+node scripts/ghl-mcp.mjs configure codex --profile stable
+node scripts/ghl-mcp.mjs configure codex --profile full
+node scripts/ghl-mcp.mjs configure codex --profile curated --json
 ```
 
-## Notes
+## Tool Profiles
 
-- `src/tools/official-spec-tools.ts` and `src/tools/official-spec-endpoints.json` are generated. Do not edit them by hand.
-- Run `npm run scan:ghl-api` after GHL API docs change.
-- The live smoke test is opt-in and only runs when `GHL_API_KEY` and `GHL_LOCATION_ID` are present.
+- `curated` - recommended for agents; high-level CRM workflows with confirmation queues.
+- `stable` - production-friendly; official, supplemental, curated, and legacy-compatible tools.
+- `full` - everything.
+- `official` - official OpenAPI and live-docs supplemental tools.
+- `raw` - endpoint-level tools only.
+
+## Run
+
+```bash
+npm run start:stdio       # Desktop MCP clients
+npm run start:http        # Streamable HTTP at /mcp
+npm run start:legacy      # Legacy SSE at /sse
+```
+
+HTTP also exposes:
+
+- `GET /health`
+- `GET /capabilities`
+- `GET /tools`
+- `POST /execute`
+- `POST /tools/call`
+
+## MCP Apps
+
+```bash
+npm run apps:setup
+npm run apps:preview
+```
+
+Open `http://localhost:3001/preview`. Without GHL credentials, the apps use preview/demo states and tell you exactly which env vars are missing.
+
+## Tool Discovery
+
+```bash
+npm run tools:list
+npm run tools:list -- --search contacts
+npm run tools:list -- --category contacts
+npm run tools:list -- --stability official
+npm run tools:list -- --access write
+npm run tools:list -- --destructive
+npm run tools:explorer
+```
+
+The static explorer is `docs/tool-explorer.html`.
+
+## Docs
+
+- [Update Log](UPDATE_LOG.md)
+- [Setup](docs/SETUP.md)
+- [Usage](docs/USAGE.md)
+- [Clients](docs/CLIENTS.md)
+- [Tool Profiles](docs/TOOL-PROFILES.md)
+- [Recipes](docs/RECIPES.md)
+- [Safety](docs/SAFETY.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Deployment](docs/DEPLOYMENT.md)
+- [Development](docs/DEVELOPMENT.md)
+- [API Coverage](docs/API-COVERAGE.md)
+- [Companion Tooling](docs/TOOLING.md)
+
+## Update History
+
+| Date | Update # | Included |
+| --- | ---: | --- |
+| 2026-06-11 | 1 | Onboarding and agent setup overhaul. See [UPDATE_LOG.md](UPDATE_LOG.md) for the full permanent update description. |
+
+## API Coverage
+
+- Official GHL endpoints parsed: `590`
+- Official endpoint coverage: `590 / 590`
+- Generated official endpoint tools: `238`
+- MCP tools in registry: `848`
+- Local-only endpoint references tracked for review: `253`
+
+Generated coverage artifacts live in `docs/`. Run `npm run scan:ghl-api` only when intentionally refreshing API coverage.
+
+## Safety
+
+- `.env` is ignored and must never be committed.
+- `test-tool` refuses write/destructive tools unless `--confirm` is supplied.
+- Curated workflow tools stage confirmation queues for writes.
+- Use `curated` for beginners and `stable` for production.

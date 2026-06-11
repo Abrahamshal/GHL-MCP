@@ -69,6 +69,8 @@ type AppDefinition = {
   metrics?: (data: Record<string, unknown>) => Array<{ label: string; value: string | number }>;
 };
 
+type AppRegistrationServer = Parameters<typeof registerAppResource>[0] & Parameters<typeof registerAppTool>[0];
+
 const appDir = dirname(fileURLToPath(import.meta.url));
 const packageRoot = appDir.endsWith(`${process.platform === 'win32' ? '\\' : '/'}dist`) ? resolve(appDir, '..') : appDir;
 const repoRoot = resolve(packageRoot, '..');
@@ -402,8 +404,10 @@ export function createServer(): McpServer {
     version: '0.2.0',
   });
 
+  const appRegistrationServer = server as unknown as AppRegistrationServer;
+
   registerAppResource(
-    server,
+    appRegistrationServer,
     'GoHighLevel MCP Apps',
     appResourceUri,
     {
@@ -444,7 +448,7 @@ export async function buildPreviewPayload(appId: string, args: Record<string, un
 
 function registerToolExplorer(server: McpServer): void {
   registerAppTool(
-    server,
+    server as unknown as AppRegistrationServer,
     'show_ghl_tool_explorer_app',
     {
       title: 'Open GHL Tool Explorer',
@@ -459,7 +463,7 @@ function registerToolExplorer(server: McpServer): void {
 
 function registerWorkspaceTool(server: McpServer, definition: AppDefinition): void {
   registerAppTool(
-    server,
+    server as unknown as AppRegistrationServer,
     definition.toolName,
     {
       title: `Open ${definition.title}`,
@@ -475,7 +479,7 @@ function registerWorkspaceTool(server: McpServer, definition: AppDefinition): vo
 function registerAliasTool(server: McpServer, toolName: string, appId: string): void {
   const definition = findDefinition(appId);
   registerAppTool(
-    server,
+    server as unknown as AppRegistrationServer,
     toolName,
     {
       title: `Open ${definition.title}`,
@@ -702,7 +706,7 @@ async function createRegistry(): Promise<any> {
     accessToken: process.env.GHL_API_KEY,
     locationId: process.env.GHL_LOCATION_ID,
     baseUrl: process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com',
-    version: process.env.GHL_API_VERSION || '2021-07-28',
+    version: process.env.GHL_API_VERSION || '2023-02-21',
   });
   return new ToolRegistry(client);
 }
@@ -876,6 +880,12 @@ function sampleLocations(): Record<string, unknown>[] {
 
 function setupChecklist(): Record<string, unknown>[] {
   return [
+    { label: 'API key configured', status: process.env.GHL_API_KEY ? 'Check' : 'Needs credentials' },
+    { label: 'Location ID configured', status: process.env.GHL_LOCATION_ID ? 'Check' : 'Needs credentials' },
+    { label: 'Build output present', status: 'Check' },
+    { label: 'Tool inventory present', status: 'Check' },
+    { label: 'Tool profile', status: process.env.GHL_TOOL_PROFILE || 'full' },
+    { label: 'Live GHL data', status: credentialsReady() ? 'Ready' : 'Preview mode' },
     { label: 'Users invited', status: 'Check' },
     { label: 'Calendars active', status: 'Check' },
     { label: 'Phone numbers configured', status: 'Review' },

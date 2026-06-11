@@ -12,10 +12,18 @@ if (!apiKey || !locationId) {
   process.exit(0);
 }
 
+const locationCheck = { name: 'location', method: 'GET', path: `/locations/${encodeURIComponent(locationId)}`, area: 'locations', parseJson: true };
+
+const locationResult = await runCheck(locationCheck);
+const locationStatusText = locationResult.status ? `HTTP ${locationResult.status}${locationResult.message ? ` ${locationResult.message}` : ''}` : locationResult.error;
+console.log(`${locationResult.ok ? 'ok' : 'fail'} ${locationCheck.name} [${locationCheck.area}; ${locationCheck.method}] ${locationStatusText}`);
+
+let failed = locationResult.ok ? 0 : 1;
+const companyId = process.env.GHL_COMPANY_ID || locationResult.data?.location?.companyId || locationResult.data?.companyId;
+
 const readChecks = [
-  { name: 'location', method: 'GET', path: `/locations/${encodeURIComponent(locationId)}`, area: 'locations' },
-  { name: 'contacts-search', method: 'GET', path: `/contacts/search?locationId=${encodeURIComponent(locationId)}&pageLimit=1`, area: 'contacts' },
-  { name: 'users-search', method: 'GET', path: `/users/search?locationId=${encodeURIComponent(locationId)}&limit=1`, area: 'users' },
+  { name: 'contacts-search', method: 'POST', path: '/contacts/search', area: 'contacts', body: { locationId, pageLimit: 1 } },
+  { name: 'users-search', method: 'GET', path: `/users/search?companyId=${encodeURIComponent(companyId || '')}&locationId=${encodeURIComponent(locationId)}&limit=1`, area: 'users' },
   { name: 'email-v2-campaigns', method: 'GET', path: `/emails/public/v2/locations/${encodeURIComponent(locationId)}/campaigns/emails?limit=1`, area: 'emails-v2' },
   { name: 'email-v2-workflow-campaigns', method: 'GET', path: `/emails/public/v2/locations/${encodeURIComponent(locationId)}/campaigns/workflows?limit=1`, area: 'emails-v2' },
   { name: 'email-v2-bulk-action-campaigns', method: 'GET', path: `/emails/public/v2/locations/${encodeURIComponent(locationId)}/campaigns/bulk-actions?limit=1`, area: 'emails-v2' },
@@ -43,16 +51,16 @@ if (runWrites) {
 }
 
 const checks = [...readChecks, ...writeChecks];
-let failed = 0;
 
 for (const check of checks) {
   const result = await runCheck(check);
-  const statusText = result.status ? `HTTP ${result.status}` : result.error;
+  const statusText = result.status ? `HTTP ${result.status}${result.message ? ` ${result.message}` : ''}` : result.error;
   console.log(`${result.ok ? 'ok' : 'fail'} ${check.name} [${check.area}; ${check.method}] ${statusText}`);
   if (!result.ok) failed += 1;
 }
 
-console.log(`Live smoke complete: ${checks.length - failed}/${checks.length} checks passed.`);
+const totalChecks = checks.length + 1;
+console.log(`Live smoke complete: ${totalChecks - failed}/${totalChecks} checks passed.`);
 if (failed > 0) process.exit(1);
 
 async function runCheck(check) {
@@ -72,9 +80,12 @@ async function runCheck(check) {
       signal: controller.signal,
     });
 
+    const text = await response.text();
     return {
-      ok: response.status >= 200 && response.status < 500,
+      ok: response.ok,
       status: response.status,
+      message: summarizeResponseText(text),
+      data: check.parseJson && text ? parseJson(text) : undefined,
     };
   } catch (error) {
     return {
@@ -83,5 +94,23 @@ async function runCheck(check) {
     };
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+function parseJson(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+function summarizeResponseText(text) {
+  if (!text) return '';
+  try {
+    const parsed = JSON.parse(text);
+    return parsed.message ? `- ${String(parsed.message).slice(0, 160)}` : '';
+  } catch {
+    return `- ${text.slice(0, 160)}`;
   }
 }

@@ -28,8 +28,7 @@ From the repo root:
 
 ```bash
 npm run build
-npm run apps:install
-npm run apps:build
+npm run apps:setup
 ```
 
 MCP Apps use `@modelcontextprotocol/ext-apps`, which requires Node 20+.
@@ -40,8 +39,10 @@ Optional live data:
 GHL_API_KEY=your_private_integration_api_key
 GHL_LOCATION_ID=your_location_id
 GHL_BASE_URL=https://services.leadconnectorhq.com
-GHL_API_VERSION=2021-07-28
+GHL_API_VERSION=2023-02-21
 ```
+
+`GHL_API_VERSION=2023-02-21` is the HighLevel API `Version` header, not the project year. Do not change it to 2026 unless HighLevel publishes a new required API version.
 
 Without GHL credentials, the Tool Explorer app still works from `docs/tool-inventory.json`; live GHL data panels show a credentials-needed state.
 
@@ -97,7 +98,7 @@ Example stdio entry:
         "GHL_API_KEY": "your_private_integration_api_key",
         "GHL_LOCATION_ID": "your_location_id",
         "GHL_BASE_URL": "https://services.leadconnectorhq.com",
-        "GHL_API_VERSION": "2021-07-28"
+        "GHL_API_VERSION": "2023-02-21"
       }
     }
   }

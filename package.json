@@ -14,6 +14,11 @@
     "examples/",
     "mcp-apps/",
     "README.md",
+    "QUICKSTART.md",
+    "AGENT_SETUP.md",
+    "UPDATE_LOG.md",
+    "Dockerfile",
+    "docker-compose.yml",
     "package.json",
     ".env.example"
   ],
@@ -22,7 +27,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "build:server": "node scripts/build-server.mjs",
@@ -41,14 +46,28 @@
     "validate:api-lock": "node scripts/validate-api-source-lock.mjs",
     "ci:ghl-api-drift": "npm run scan:ghl-api && git diff -- docs/GHL-API-COVERAGE-REPORT.md docs/GHL-LOCAL-ENDPOINT-CLASSIFICATION.md docs/api-sources.lock.json docs/ghl-api-coverage.json docs/API-DASHBOARD.md docs/tool-inventory.json src/tools/official-spec-tools.ts src/tools/official-spec-endpoints.json && test -z \"$(git status --porcelain -- docs/GHL-API-COVERAGE-REPORT.md docs/GHL-LOCAL-ENDPOINT-CLASSIFICATION.md docs/api-sources.lock.json docs/ghl-api-coverage.json docs/API-DASHBOARD.md docs/tool-inventory.json src/tools/official-spec-tools.ts src/tools/official-spec-endpoints.json)\"",
     "smoke:ghl-live": "node scripts/ghl-live-smoke.mjs",
+    "setup": "node scripts/ghl-mcp.mjs setup",
+    "doctor": "node scripts/ghl-mcp.mjs doctor",
+    "auth-check": "node scripts/ghl-mcp.mjs auth-check",
+    "agent:setup": "node scripts/ghl-mcp.mjs setup --ci --fix",
+    "agent:check": "node scripts/ghl-mcp.mjs agent-check",
+    "configure:codex": "node scripts/ghl-mcp.mjs configure codex --profile curated",
+    "configure:claude": "node scripts/ghl-mcp.mjs configure claude --profile curated",
+    "configure:cursor": "node scripts/ghl-mcp.mjs configure cursor --profile curated",
+    "configure:windsurf": "node scripts/ghl-mcp.mjs configure windsurf --profile curated",
     "tools:doctor": "node scripts/ghl-mcp.mjs doctor",
     "tools:list": "node scripts/ghl-mcp.mjs list-tools",
     "tools:report": "node scripts/ghl-mcp.mjs report",
     "tools:explorer": "node scripts/ghl-mcp.mjs explorer",
     "tools:configure": "node scripts/ghl-mcp.mjs configure codex",
     "tools:update-api": "node scripts/ghl-mcp.mjs update-api",
+    "clean": "rm -rf dist mcp-apps/dist coverage",
+    "reset-local": "npm run clean && npm run build",
     "apps:install": "npm install --prefix mcp-apps",
+    "apps:setup": "npm run apps:install && npm run apps:build",
     "apps:build": "npm run build --prefix mcp-apps",
+    "apps:dev": "npm run dev --prefix mcp-apps",
+    "apps:preview": "npm run start:http --prefix mcp-apps",
     "apps:typecheck": "npm run typecheck --prefix mcp-apps",
     "apps:start:stdio": "npm run start:stdio --prefix mcp-apps",
     "apps:start:http": "npm run start:http --prefix mcp-apps"

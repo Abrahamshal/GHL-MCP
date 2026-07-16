@@ -10,6 +10,7 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ToolAnnotations, Tool } from '@modelcontextprotocol/sdk/types.js';
+import { z, ZodType } from 'zod/v4';
 
 import { GHLApiClient } from './clients/ghl-api-client.js';
 import { ContactTools } from './tools/contact-tools.js';
@@ -148,6 +149,52 @@ function inferAnnotations(toolName: string, meta?: any): ToolAnnotations {
     idempotentHint: isIdempotent,
     openWorldHint: true, // All tools interact with GHL API
   };
+}
+
+/**
+ * Convert a tool's JSON Schema (as authored in the tool modules) into a Zod raw
+ * shape for McpServer.registerTool. Without this, tools register with an empty
+ * schema: clients can't see parameters and every argument gets dropped.
+ * Conversion is intentionally loose — the tool modules do their own validation;
+ * the goal is that parameter names/descriptions surface to clients and
+ * arguments flow through.
+ */
+function jsonSchemaPropToZod(prop: any): ZodType {
+  let type: ZodType;
+  if (Array.isArray(prop?.enum) && prop.enum.length > 0) {
+    const values = prop.enum.map(String) as [string, ...string[]];
+    type = values.length > 1 ? z.enum(values) : z.literal(values[0]);
+  } else {
+    switch (prop?.type) {
+      case 'string': type = z.string(); break;
+      case 'number': type = z.number(); break;
+      case 'integer': type = z.number().int(); break;
+      case 'boolean': type = z.boolean(); break;
+      case 'array': type = z.array(prop.items ? jsonSchemaPropToZod(prop.items) : z.any()); break;
+      case 'object': type = z.record(z.string(), z.any()); break;
+      default: type = z.any();
+    }
+  }
+  if (typeof prop?.description === 'string' && prop.description) {
+    type = type.describe(prop.description);
+  }
+  return type;
+}
+
+function jsonSchemaToZodShape(tool: Tool): Record<string, ZodType> {
+  const schema = (tool as any).inputSchema || (tool as any).input_schema || {};
+  const properties = schema.properties as Record<string, any> | undefined;
+  // Empty shape (not undefined): with no inputSchema the SDK invokes the
+  // callback without an args parameter and the handler would receive request
+  // metadata in the args position instead.
+  if (!properties || Object.keys(properties).length === 0) return {};
+  const required = new Set<string>(Array.isArray(schema.required) ? schema.required.map(String) : []);
+  const shape: Record<string, ZodType> = {};
+  for (const [key, prop] of Object.entries(properties)) {
+    const type = jsonSchemaPropToZod(prop);
+    shape[key] = required.has(key) ? type : type.optional();
+  }
+  return shape;
 }
 
 function inferToolInventoryItem(tool: Tool, moduleName: string): ToolInventoryItem {
@@ -385,6 +432,7 @@ export class ToolRegistry {
           {
             title: annotations.title,
             description: tool.description || '',
+            inputSchema: jsonSchemaToZodShape(tool),
             annotations,
             _meta: meta,
           },

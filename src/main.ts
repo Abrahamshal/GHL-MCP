@@ -179,7 +179,11 @@ async function main() {
       verifier: provider,
       resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(mcpResourceUrl),
     })];
-    log('info', 'OAuth enabled: /mcp requires a bearer token', { issuer: publicUrl });
+    // The legacy REST/SSE surfaces can execute the same tools as /mcp — they
+    // must sit behind the same bearer auth. (Registered later in this file /
+    // in registerExecuteRoutes; app.use here runs first for these prefixes.)
+    app.use(['/execute', '/tools', '/tool-inventory', '/sse', '/capabilities'], ...mcpGuards);
+    log('info', 'OAuth enabled: /mcp (and legacy REST/SSE routes) require a bearer token', { issuer: publicUrl });
   } else {
     log('warn', 'OAuth DISABLED (no MCP_OAUTH_PASSWORD set) — /mcp is unauthenticated');
   }

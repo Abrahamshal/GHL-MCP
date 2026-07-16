@@ -282,7 +282,9 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
     readPlan: [
       { label: 'Conversation', tool: 'get_conversation', method: 'GET', path: (args) => stringArg(args.conversationId) ? `/conversations/${stringArg(args.conversationId)}` : undefined },
       { label: 'Messages', tool: 'get_messages', method: 'GET', path: (args) => stringArg(args.conversationId) ? `/conversations/${stringArg(args.conversationId)}/messages?limit=50` : undefined },
-      { label: 'Conversation search', tool: 'search_conversations', method: 'GET', path: (args, locationId) => `/conversations/search?locationId=${enc(locationId)}${stringArg(args.query) ? `&query=${enc(stringArg(args.query))}` : ''}` },
+      // Broad inbox sweep only when the caller has not targeted a specific
+      // record (or explicitly asked to search) — targeted lookups stay lean.
+      { label: 'Conversation search', tool: 'search_conversations', method: 'GET', path: (args, locationId) => (stringArg(args.query) || (!stringArg(args.conversationId) && !stringArg(args.contactId))) ? `/conversations/search?locationId=${enc(locationId)}${stringArg(args.query) ? `&query=${enc(stringArg(args.query))}` : ''}` : undefined },
       { label: 'Contact profile', tool: 'get_contact', method: 'GET', path: (args) => stringArg(args.contactId) ? `/contacts/${stringArg(args.contactId)}` : undefined },
     ],
   },
@@ -692,6 +694,21 @@ export class AgentWorkspaceTools {
     const locationId = locationArg(args, this.ghlClient.getConfig().locationId);
     const proposedActions = compactActions(spec.buildActions?.(args, locationId) || actionsFromReadPlan(spec, args, locationId));
     const readResults = spec.readPlan ? await this.runReadPlan(spec, args, locationId) : [];
+
+    // Read-plan workspaces: the proposed actions just mirror the reads that
+    // already ran, so echoing them (plus boilerplate next steps) is noise for
+    // the calling agent. Return the lean envelope. Write/prepare tools — and
+    // read tools whose buildActions ARE the product (e.g. crm_get_next_page) —
+    // keep the full staging envelope.
+    if (spec.access === 'read' && spec.readPlan && !spec.buildActions) {
+      return {
+        workflow: { name: spec.name, title: spec.title, app: spec.app, access: spec.access },
+        summary: summarize(spec, proposedActions),
+        locationId,
+        readResults,
+        resultSummary: resultSummary(readResults, proposedActions),
+      };
+    }
 
     return {
       workflow: {

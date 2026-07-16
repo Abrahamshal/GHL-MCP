@@ -50,6 +50,18 @@ const text = JSON.stringify(res.content ?? res);
 // attempted) — proving arguments reach the underlying implementation.
 check('args flow through to the tool', text.includes('test-value-123'), `arg=${argKey}`);
 
+// Conditional reads + lean envelopes (curated ergonomics):
+const targeted = await mcpClient.callTool({ name: 'crm_conversation_workspace', arguments: { conversationId: 'c-1', contactId: 'k-1' } });
+const targetedText = JSON.stringify(targeted.content ?? targeted);
+check('targeted lookup skips inbox sweep', !targetedText.includes('Conversation search'));
+check('read envelope is lean (no proposedActions/nextSteps)', !targetedText.includes('proposedActions') && !targetedText.includes('nextSteps'));
+const broad = await mcpClient.callTool({ name: 'crm_conversation_workspace', arguments: {} });
+check('bare call still sweeps inbox', JSON.stringify(broad.content ?? broad).includes('Conversation search'));
+const nextPage = await mcpClient.callTool({ name: 'crm_get_next_page', arguments: { limit: 5 } });
+check('buildActions read tool keeps proposedActions', JSON.stringify(nextPage.content ?? nextPage).includes('proposedActions'));
+const prep = await mcpClient.callTool({ name: 'crm_prepare_contact_note', arguments: { contactId: 'k-1', body: 'hi' } });
+check('write tool keeps staging envelope', JSON.stringify(prep.content ?? prep).includes('executeToolCalls'));
+
 const failed = results.filter((r) => !r).length;
 console.log(`\n${results.length - failed}/${results.length} checks passed`);
 process.exit(failed ? 1 : 0);

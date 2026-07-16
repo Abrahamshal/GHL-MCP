@@ -2,6 +2,14 @@
 
 Model Context Protocol server for GoHighLevel. It exposes GHL API operations as MCP tools over stdio, Streamable HTTP, legacy SSE, and optional MCP Apps.
 
+> **This fork adds two things on top of upstream:**
+> 1. **OAuth 2.1 for remote deployment** — a self-contained authorization server (dynamic client registration, PKCE, refresh tokens, password-gated consent) that secures the Streamable HTTP `/mcp` endpoint so it can be added directly to **claude.ai as a custom connector**. Enable it by setting `MCP_OAUTH_PASSWORD`.
+> 2. **Agency (Company) multi-sub-account mode** — one agency OAuth credential, and you choose which sub-account to work in at runtime via `ghl_list_subaccounts` / `ghl_select_subaccount` / `ghl_current_subaccount`. Per-location tokens are minted on demand. Enable it with the `GHL_AGENCY_*` env vars.
+>
+> **Deploying it as a remote connector (Railway + Claude): see [DEPLOY-RAILWAY.md](DEPLOY-RAILWAY.md).**
+>
+> Neither feature changes the default single-sub-account, local/stdio behavior — both are opt-in via environment variables.
+
 New here? Start with [QUICKSTART.md](QUICKSTART.md).
 
 Using an AI/dev agent? Give it [AGENT_SETUP.md](AGENT_SETUP.md) and say: "Set this up for my MCP client using the curated profile. Ask me for credentials if needed. Do not run write tools."

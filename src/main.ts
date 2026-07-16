@@ -352,6 +352,8 @@ process.on('SIGINT', () => { log('info', 'Shutting down (SIGINT)'); process.exit
 process.on('SIGTERM', () => { log('info', 'Shutting down (SIGTERM)'); process.exit(0); });
 
 main().catch((err) => {
-  log('error', 'Fatal error', { error: err.message, stack: err.stack });
+  // Put the reason in the message itself so collapsed log viewers show it.
+  log('error', `Fatal error: ${err.message}`, { stack: err.stack });
+  console.error(`FATAL: ${err.message}`);
   process.exit(1);
 });

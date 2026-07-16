@@ -26,6 +26,8 @@ type WorkspaceToolSpec = {
     method: 'GET' | 'POST';
     path: (args: JsonRecord, locationId: string) => string | undefined;
     body?: (args: JsonRecord, locationId: string) => JsonRecord;
+    /** Override the GHL Version header (e.g. 'v3' for the chat-widget API). */
+    version?: string;
   }>;
 };
 
@@ -278,6 +280,7 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
       conversationId: { type: 'string' },
       contactId: CONTACT_FIELDS.contactId,
       query: { type: 'string' },
+      includeWidgets: { type: 'boolean', description: 'Also list the location chat widgets (website live-chat deployments).' },
     },
     readPlan: [
       { label: 'Conversation', tool: 'get_conversation', method: 'GET', path: (args) => stringArg(args.conversationId) ? `/conversations/${stringArg(args.conversationId)}` : undefined },
@@ -285,6 +288,8 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
       // Broad inbox sweep only when the caller has not targeted a specific
       // record (or explicitly asked to search) — targeted lookups stay lean.
       { label: 'Conversation search', tool: 'search_conversations', method: 'GET', path: (args, locationId) => (stringArg(args.query) || (!stringArg(args.conversationId) && !stringArg(args.contactId))) ? `/conversations/search?locationId=${enc(locationId)}${stringArg(args.query) ? `&query=${enc(stringArg(args.query))}` : ''}` : undefined },
+      // Chat-widget API is a v3-generation endpoint (Version: v3, not a date).
+      { label: 'Chat widgets', tool: 'list_chat_widgets', method: 'GET', version: 'v3', path: (args, locationId) => args.includeWidgets ? `/chat-widget/list?locationId=${enc(locationId)}&offset=0&limit=50` : undefined },
       { label: 'Contact profile', tool: 'get_contact', method: 'GET', path: (args) => stringArg(args.contactId) ? `/contacts/${stringArg(args.contactId)}` : undefined },
     ],
   },
@@ -755,7 +760,7 @@ export class AgentWorkspaceTools {
       const path = item.path(args, locationId);
       if (!path) return undefined;
       try {
-        const response = await this.ghlClient.makeRequest(item.method, path, item.body?.(args, locationId));
+        const response = await this.ghlClient.makeRequest(item.method, path, item.body?.(args, locationId), item.version ? { version: item.version } : undefined);
         return {
           label: item.label,
           tool: item.tool,

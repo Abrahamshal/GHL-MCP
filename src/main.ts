@@ -76,10 +76,11 @@ async function main() {
   const mcpResourceUrl = new URL('/mcp', publicUrl);
 
   // Agency (Company) OAuth mode: one credential, choose any sub-account at runtime.
+  // Only the app client id/secret are required; the refresh token is acquired
+  // click-through via the install redirect (or seeded from env / the token store).
   const agencyEnabled = !!(
     process.env.GHL_AGENCY_CLIENT_ID &&
-    process.env.GHL_AGENCY_CLIENT_SECRET &&
-    process.env.GHL_AGENCY_REFRESH_TOKEN
+    process.env.GHL_AGENCY_CLIENT_SECRET
   );
 
   const config: GHLConfig = agencyEnabled
@@ -96,7 +97,7 @@ async function main() {
     agency = new AgencyManager({
       clientId: process.env.GHL_AGENCY_CLIENT_ID as string,
       clientSecret: process.env.GHL_AGENCY_CLIENT_SECRET as string,
-      refreshToken: process.env.GHL_AGENCY_REFRESH_TOKEN as string,
+      refreshToken: process.env.GHL_AGENCY_REFRESH_TOKEN,
       baseUrl: config.baseUrl,
       version: config.version,
       companyId: process.env.GHL_COMPANY_ID,
@@ -119,7 +120,11 @@ async function main() {
 
   if (agencyEnabled && agency) {
     await agency.validate();
-    log('info', 'Agency OAuth mode enabled — sub-account selectable at runtime', { companyId: agency.getCompanyId() });
+    if (agency.isConfigured()) {
+      log('info', 'Agency OAuth mode enabled — sub-account selectable at runtime', { companyId: agency.getCompanyId() });
+    } else {
+      log('warn', 'Agency mode: AWAITING INSTALL — approve the marketplace app install (agency level); the server will complete the connection automatically at its redirect URI.');
+    }
   } else {
     await ghlClient.testConnection();
   }
@@ -187,6 +192,10 @@ async function main() {
         // Explicit per-request credential override (escape hatch).
         client = new EnhancedGHLClient({ ...config, accessToken: reqAccessToken, locationId: reqLocationId });
       } else if (agencyEnabled && agency) {
+        if (!agency.isConfigured()) {
+          res.status(503).json({ error: 'GHL agency not connected yet. Approve the marketplace app install (agency level) to finish setup.' });
+          return;
+        }
         // Agency mode: build a client scoped to this connection's active sub-account.
         const clientKey = (req as any).auth?.clientId || 'default';
         const activeLoc = agency.getActiveLocation(clientKey) || config.locationId || '';
@@ -232,7 +241,27 @@ async function main() {
   app.get('/sse', handleSSE);
   app.post('/sse', handleSSE);
 
-  app.get('/', (_req, res) => {
+  app.get('/', async (req, res) => {
+    // OAuth install callback: the marketplace app's redirect URI points at "/".
+    // HighLevel redirects here with ?code= after the user approves the install;
+    // we complete the token exchange server-side — no manual steps.
+    const installCode = typeof req.query.code === 'string' ? req.query.code : undefined;
+    if (agencyEnabled && agency && installCode) {
+      if (agency.isConfigured()) {
+        res.status(409).type('html').send('<h1>Already connected</h1><p>This server is already linked to an agency. To re-link, clear the token store and redeploy.</p>');
+        return;
+      }
+      try {
+        const info = await agency.installFromCode(installCode, `${publicUrl}/`);
+        log('info', 'Agency install completed via redirect', { companyId: info.companyId });
+        res.type('html').send('<h1>✅ Agency connected</h1><p>GoHighLevel is now linked to this MCP server. You can close this tab and add the connector in Claude.</p>');
+      } catch (err: any) {
+        log('error', 'Agency install failed', { error: err.message });
+        res.status(400).type('html').send(`<h1>Install failed</h1><p>${err.message}</p><p>Re-open the install link and try again.</p>`);
+      }
+      return;
+    }
+
     res.json({
       name: 'GoHighLevel MCP Server',
       version: '2.0.0',

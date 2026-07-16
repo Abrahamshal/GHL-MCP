@@ -83,6 +83,31 @@ const [c1, c2, c3] = await Promise.all([mgr3.getAgencyToken(), mgr3.getAgencyTok
 check('concurrent refresh is single-flight', calls.token === 1 && c1 === c2 && c2 === c3, `tokenCalls=${calls.token}`);
 try { rmSync('/tmp/agency-smoke-token3.json'); } catch {}
 
+// Install-from-code flow (click-through install): unconfigured manager exchanges
+// an authorization code, persists the refresh token, and becomes configured.
+globalThis.fetch = async (url, opts = {}) => {
+  const u = url.toString();
+  const body = opts.body ? Object.fromEntries(new URLSearchParams(opts.body)) : {};
+  if (u.endsWith('/oauth/token') && body.grant_type === 'authorization_code') {
+    if (body.code !== 'good-code' || body.user_type !== 'Company') return jsonRes(401, { error: 'bad code' });
+    return jsonRes(200, { access_token: 'installed-tok', refresh_token: 'rt-from-install', expires_in: 3600, companyId: 'comp-9', userType: 'Company' });
+  }
+  return jsonRes(404, { message: 'unexpected ' + u });
+};
+const STORE4 = '/tmp/agency-smoke-token4.json';
+try { rmSync(STORE4); } catch {}
+const mgr4 = new AgencyManager({ clientId: 'cid', clientSecret: 'csec', baseUrl: 'https://services.leadconnectorhq.com', version: '2021-07-28', tokenStorePath: STORE4 });
+check('unconfigured before install', mgr4.isConfigured() === false);
+let threw = false;
+try { await mgr4.getAgencyToken(); } catch (e) { threw = /not connected/.test(e.message); }
+check('getAgencyToken fails clearly when unconfigured', threw);
+const info = await mgr4.installFromCode('good-code', 'https://x.example/');
+check('installFromCode succeeds', info.companyId === 'comp-9' && mgr4.isConfigured());
+check('install persists refresh token', JSON.parse(readFileSync(STORE4, 'utf8')).refresh_token === 'rt-from-install');
+const tokAfter = await mgr4.getAgencyToken();
+check('access token available after install without refresh call', tokAfter === 'installed-tok');
+try { rmSync(STORE4); } catch {}
+
 try { rmSync(STORE); } catch {}
 const failed = results.filter((r) => !r).length;
 console.log(`\n${results.length - failed}/${results.length} checks passed`);

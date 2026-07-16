@@ -26,7 +26,8 @@ const EXPIRY_MARGIN_MS = 60 * 1000; // refresh 60s before actual expiry
 export interface AgencyManagerOptions {
   clientId: string;
   clientSecret: string;
-  refreshToken: string;
+  /** Optional seed; normally acquired via installFromCode() and persisted. */
+  refreshToken?: string;
   baseUrl: string;
   version: string;
   companyId?: string;
@@ -61,7 +62,7 @@ export class AgencyManager {
   constructor(options: AgencyManagerOptions) {
     this.clientId = options.clientId;
     this.clientSecret = options.clientSecret;
-    this.refreshToken = options.refreshToken;
+    this.refreshToken = options.refreshToken || '';
     this.baseUrl = options.baseUrl.replace(/\/+$/, '');
     this.version = options.version;
     this.companyId = options.companyId;
@@ -71,6 +72,47 @@ export class AgencyManager {
 
   getCompanyId(): string | undefined {
     return this.companyId;
+  }
+
+  /** True once a refresh token exists (via env seed, persisted store, or install). */
+  isConfigured(): boolean {
+    return !!this.refreshToken;
+  }
+
+  /**
+   * Complete an OAuth install: exchange an authorization code for Company
+   * tokens and persist the refresh token. Called by the server's redirect
+   * handler so the whole install is click-through — no manual token handling.
+   */
+  async installFromCode(code: string, redirectUri: string): Promise<{ companyId?: string; userType?: string }> {
+    const res = await fetch(`${this.baseUrl}/oauth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+      body: new URLSearchParams({
+        client_id: this.clientId,
+        client_secret: this.clientSecret,
+        grant_type: 'authorization_code',
+        code,
+        user_type: 'Company',
+        redirect_uri: redirectUri,
+      }),
+    });
+    const data: any = await res.json().catch(() => ({}));
+    if (!res.ok || !data.access_token || !data.refresh_token) {
+      throw new Error(`Install token exchange failed (${res.status}): ${data.error_description || data.message || data.error || 'unknown error'}`);
+    }
+    if (data.userType && data.userType !== 'Company') {
+      throw new Error(`Install returned a ${data.userType}-level token. Re-run the install and choose the Agency (Company) level.`);
+    }
+    // Pin to the configured company if one was specified.
+    if (this.companyId && data.companyId && data.companyId !== this.companyId) {
+      throw new Error('Install is for a different agency (companyId mismatch); rejected.');
+    }
+    this.agencyToken = { token: data.access_token, expiresAtMs: Date.now() + (data.expires_in ?? 3600) * 1000 };
+    if (data.companyId) this.companyId = data.companyId;
+    this.refreshToken = data.refresh_token;
+    this.persistRefreshToken();
+    return { companyId: data.companyId, userType: data.userType };
   }
 
   // ---- active-location tracking (keyed by OAuth client id / connector) -------
@@ -103,6 +145,9 @@ export class AgencyManager {
   }
 
   private async doRefresh(): Promise<string> {
+    if (!this.refreshToken) {
+      throw new Error('GHL agency not connected yet. Open the app install link to connect this server to your agency.');
+    }
     const res = await fetch(`${this.baseUrl}/oauth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
@@ -176,8 +221,9 @@ export class AgencyManager {
     return entry.token;
   }
 
-  /** Validate credentials at startup by performing a refresh. */
+  /** Validate credentials at startup by performing a refresh (no-op until installed). */
   async validate(): Promise<void> {
+    if (!this.isConfigured()) return;
     await this.getAgencyToken();
   }
 

@@ -131,6 +131,10 @@ async function main() {
 
   const ownOrigin = new URL(publicUrl).origin;
   const app = express();
+  // Railway (and most PaaS) terminate TLS at a proxy and forward with
+  // X-Forwarded-For. Without this, express-rate-limit (used by the SDK's OAuth
+  // /register, /token, /authorize handlers) throws on every proxied request.
+  app.set('trust proxy', 1);
   app.use(cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);

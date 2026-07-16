@@ -20,6 +20,7 @@ const mcpResourceUrl = new URL('/mcp', PUBLIC_URL);
 
 const provider = new GhlOAuthProvider({ password: PASSWORD, resourceName: 'GHL MCP Test' });
 const app = express();
+app.set('trust proxy', 1); // mirror main.ts (Railway proxy)
 app.post('/oauth/consent', express.urlencoded({ extended: false }), provider.handleConsent);
 app.use(mcpAuthRouter({
   provider,
@@ -117,6 +118,15 @@ const server = app.listen(PORT, async () => {
     const bogus = await fetch(`${PUBLIC_URL}/mcp`, { method: 'POST', headers: { authorization: 'Bearer not-a-real-token' } });
     const bogusBody = await bogus.text();
     check('bogus bearer -> 401', bogus.status === 401, `status=${bogus.status} body=${bogusBody.slice(0,160)}`);
+
+    // 14. Registration works behind a reverse proxy (X-Forwarded-For present).
+    // Without app.set('trust proxy'), the SDK's rate limiter 500s on this.
+    const proxiedReg = await fetch(`${PUBLIC_URL}/register`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.7' },
+      body: JSON.stringify({ client_name: 'Proxied', redirect_uris: ['https://claude.ai/api/mcp/auth_callback'], token_endpoint_auth_method: 'none', grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'] }),
+    });
+    const proxiedRegBody = await proxiedReg.json().catch(() => ({}));
+    check('DCR works behind proxy (X-Forwarded-For)', proxiedReg.status === 201 && !!proxiedRegBody.client_id, `status=${proxiedReg.status}`);
 
   } catch (e) {
     console.error('SMOKE ERROR:', e);

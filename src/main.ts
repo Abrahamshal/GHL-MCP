@@ -161,7 +161,18 @@ async function main() {
   // ---- OAuth 2.1 authorization server (optional, enabled by MCP_OAUTH_PASSWORD) ----
   let mcpGuards: express.RequestHandler[] = [];
   if (authEnabled) {
-    const provider = new GhlOAuthProvider({ password: oauthPassword as string, resourceName: 'GoHighLevel MCP' });
+    // Persist connector sessions next to the GHL token (i.e. on the volume) so
+    // redeploys don't force a re-login in Claude.
+    const ghlStorePath = process.env.GHL_TOKEN_STORE_PATH;
+    const oauthStorePath =
+      process.env.MCP_OAUTH_STORE_PATH ||
+      (ghlStorePath ? path.join(path.dirname(ghlStorePath), 'mcp-oauth-sessions.json')
+                    : path.join(process.cwd(), '.mcp-oauth-sessions.json'));
+    const provider = new GhlOAuthProvider({
+      password: oauthPassword as string,
+      resourceName: 'GoHighLevel MCP',
+      storePath: oauthStorePath,
+    });
 
     // Consent form POST must be registered before the auth router / catch-alls.
     app.post('/oauth/consent', express.urlencoded({ extended: false }), provider.handleConsent);

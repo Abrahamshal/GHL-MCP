@@ -4,6 +4,7 @@
  */
 import express from 'express';
 import crypto from 'node:crypto';
+import { readFileSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 // Resolve the SDK + provider via require() so this harness matches the runtime
 // module system of the compiled dist (CommonJS) — otherwise instanceof checks
@@ -18,7 +19,9 @@ const PUBLIC_URL = `http://localhost:${PORT}`;
 const PASSWORD = 'super-secret-pw';
 const mcpResourceUrl = new URL('/mcp', PUBLIC_URL);
 
-const provider = new GhlOAuthProvider({ password: PASSWORD, resourceName: 'GHL MCP Test' });
+const SESSION_STORE = '/tmp/oauth-smoke-sessions.json';
+try { rmSync(SESSION_STORE); } catch {}
+const provider = new GhlOAuthProvider({ password: PASSWORD, resourceName: 'GHL MCP Test', storePath: SESSION_STORE });
 const app = express();
 app.set('trust proxy', 1); // mirror main.ts (Railway proxy)
 app.post('/oauth/consent', express.urlencoded({ extended: false }), provider.handleConsent);
@@ -127,6 +130,19 @@ const server = app.listen(PORT, async () => {
     });
     const proxiedRegBody = await proxiedReg.json().catch(() => ({}));
     check('DCR works behind proxy (X-Forwarded-For)', proxiedReg.status === 201 && !!proxiedRegBody.client_id, `status=${proxiedReg.status}`);
+
+    // 15. Sessions survive a "redeploy": a fresh provider instance loading the
+    // same store must accept the previously issued access token and know the
+    // registered client. Raw tokens must NOT appear in the store file (hashed).
+    const storeRaw = readFileSync(SESSION_STORE, 'utf8');
+    check('store file does not contain raw tokens', !storeRaw.includes(tok.access_token) && !storeRaw.includes(tok.refresh_token));
+    const provider2 = new GhlOAuthProvider({ password: PASSWORD, resourceName: 'GHL MCP Test', storePath: SESSION_STORE });
+    const restoredAuth = await provider2.verifyAccessToken(tok.access_token).catch((e) => ({ error: e.message }));
+    check('access token survives provider restart', restoredAuth.clientId === clientId, JSON.stringify(restoredAuth).slice(0, 100));
+    const restoredClient = provider2.clientsStore.getClient(clientId);
+    check('client registration survives provider restart', !!restoredClient);
+    const refreshed2 = await provider2.exchangeRefreshToken(restoredClient, refreshed.refresh_token).catch((e) => ({ error: e.message }));
+    check('refresh token survives provider restart', !!refreshed2.access_token, JSON.stringify(refreshed2).slice(0, 100));
 
   } catch (e) {
     console.error('SMOKE ERROR:', e);

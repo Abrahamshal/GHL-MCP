@@ -56,3 +56,7 @@ temp/
 # Agency OAuth refresh-token store (contains a live secret)
 .ghl-agency-token.json
 *.ghl-token.json
+
+# Connector OAuth session store (client secrets + token hashes)
+.mcp-oauth-sessions.json
+*mcp-oauth-sessions.json

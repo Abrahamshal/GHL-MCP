@@ -123,6 +123,7 @@ export class AgencyManager {
   setActiveLocation(clientKey: string, locationId: string, name?: string): void {
     this.activeLocation.set(clientKey, locationId);
     if (name) this.subAccountNames.set(locationId, name);
+    this.persistState();
   }
 
   getSubAccountName(locationId: string): string | undefined {
@@ -227,7 +228,7 @@ export class AgencyManager {
     await this.getAgencyToken();
   }
 
-  // ---- refresh-token persistence --------------------------------------------
+  // ---- state persistence (refresh token + active sub-account selections) ----
   private loadPersistedRefreshToken(): void {
     try {
       const raw = readFileSync(this.tokenStorePath, 'utf8');
@@ -235,17 +236,35 @@ export class AgencyManager {
       if (parsed && typeof parsed.refresh_token === 'string' && parsed.refresh_token) {
         this.refreshToken = parsed.refresh_token;
       }
+      for (const [k, v] of Object.entries<any>(parsed?.activeLocations || {})) {
+        if (typeof v === 'string') this.activeLocation.set(k, v);
+      }
+      for (const [k, v] of Object.entries<any>(parsed?.subAccountNames || {})) {
+        if (typeof v === 'string') this.subAccountNames.set(k, v);
+      }
     } catch {
-      // No persisted token yet — fall back to the env-provided one.
+      // No persisted state yet — fall back to the env-provided token.
     }
   }
 
   private persistRefreshToken(): void {
+    this.persistState();
+  }
+
+  private persistState(): void {
     try {
       mkdirSync(dirname(this.tokenStorePath), { recursive: true });
-      writeFileSync(this.tokenStorePath, JSON.stringify({ refresh_token: this.refreshToken }), { mode: 0o600 });
+      writeFileSync(
+        this.tokenStorePath,
+        JSON.stringify({
+          refresh_token: this.refreshToken,
+          activeLocations: Object.fromEntries(this.activeLocation),
+          subAccountNames: Object.fromEntries(this.subAccountNames),
+        }),
+        { mode: 0o600 }
+      );
     } catch (err: any) {
-      process.stderr.write(`[Agency] Could not persist rotated refresh token: ${err.message}\n`);
+      process.stderr.write(`[Agency] Could not persist state: ${err.message}\n`);
     }
   }
 }

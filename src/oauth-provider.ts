@@ -17,6 +17,8 @@
 
 import { Response } from 'express';
 import crypto from 'node:crypto';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { InvalidGrantError, InvalidTokenError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 
 // ---- tunables -------------------------------------------------------------
@@ -34,6 +36,12 @@ function timingSafeEqualStr(a: string, b: string): boolean {
   const bb = Buffer.from(b, 'utf8');
   if (ab.length !== bb.length) return false;
   return crypto.timingSafeEqual(ab, bb);
+}
+
+// Bearer tokens are stored (in memory and on disk) only as SHA-256 hashes, so
+// the persisted session file cannot be replayed if it leaks.
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
 }
 
 function escapeHtml(value: string): string {
@@ -77,6 +85,7 @@ interface StoredRefreshToken {
 
 class InMemoryClientsStore {
   private clients = new Map<string, StoredClient>();
+  onChange?: () => void;
 
   getClient(clientId: string): StoredClient | undefined {
     return this.clients.get(clientId);
@@ -86,20 +95,35 @@ class InMemoryClientsStore {
   // client_id / client_secret; we simply persist and echo the record back.
   registerClient(client: StoredClient): StoredClient {
     this.clients.set(client.client_id, client);
+    this.onChange?.();
     return client;
+  }
+
+  entries(): StoredClient[] {
+    return [...this.clients.values()];
+  }
+
+  restore(clients: StoredClient[]): void {
+    for (const c of clients) {
+      if (c && typeof c.client_id === 'string') this.clients.set(c.client_id, c);
+    }
   }
 }
 
 export interface GhlOAuthProviderOptions {
   password: string;
   resourceName?: string;
+  /** Persist clients + token hashes here so connector sessions survive restarts. */
+  storePath?: string;
 }
 
 export class GhlOAuthProvider {
   public readonly clientsStore = new InMemoryClientsStore();
   private readonly password: string;
   private readonly resourceName: string;
+  private readonly storePath?: string;
   private readonly authCodes = new Map<string, StoredAuthCode>();
+  // Keyed by sha256(token), never the raw token.
   private readonly accessTokens = new Map<string, StoredAccessToken>();
   private readonly refreshTokens = new Map<string, StoredRefreshToken>();
 
@@ -109,6 +133,46 @@ export class GhlOAuthProvider {
     }
     this.password = options.password;
     this.resourceName = options.resourceName || 'GoHighLevel MCP';
+    this.storePath = options.storePath;
+    this.loadStore();
+    this.clientsStore.onChange = () => this.persistStore();
+  }
+
+  // ---- session persistence (survives restarts/redeploys) --------------------
+  private loadStore(): void {
+    if (!this.storePath) return;
+    try {
+      const raw = JSON.parse(readFileSync(this.storePath, 'utf8'));
+      const nowSec = Math.floor(Date.now() / 1000);
+      this.clientsStore.restore(Array.isArray(raw.clients) ? raw.clients : []);
+      for (const [hash, entry] of Object.entries<any>(raw.accessTokens || {})) {
+        if (entry && entry.expiresAtSec > nowSec) this.accessTokens.set(hash, entry);
+      }
+      for (const [hash, entry] of Object.entries<any>(raw.refreshTokens || {})) {
+        if (entry && entry.expiresAtMs > Date.now()) this.refreshTokens.set(hash, entry);
+      }
+    } catch {
+      // No store yet (first boot) or unreadable — start empty.
+    }
+  }
+
+  private persistStore(): void {
+    if (!this.storePath) return;
+    try {
+      mkdirSync(dirname(this.storePath), { recursive: true });
+      writeFileSync(
+        this.storePath,
+        JSON.stringify({
+          v: 1,
+          clients: this.clientsStore.entries(),
+          accessTokens: Object.fromEntries(this.accessTokens),
+          refreshTokens: Object.fromEntries(this.refreshTokens),
+        }),
+        { mode: 0o600 }
+      );
+    } catch (err: any) {
+      process.stderr.write(`[OAuth] Could not persist session store: ${err.message}\n`);
+    }
   }
 
   // Called by the SDK authorize handler after it has validated client_id,
@@ -227,16 +291,18 @@ export class GhlOAuthProvider {
     refreshToken: string,
     scopes?: string[]
   ): Promise<Record<string, unknown>> {
-    const entry = this.refreshTokens.get(refreshToken);
+    const refreshHash = hashToken(refreshToken);
+    const entry = this.refreshTokens.get(refreshHash);
     if (!entry || entry.clientId !== client.client_id) {
       throw new InvalidGrantError('Invalid refresh token');
     }
     if (entry.expiresAtMs < Date.now()) {
-      this.refreshTokens.delete(refreshToken);
+      this.refreshTokens.delete(refreshHash);
+      this.persistStore();
       throw new InvalidGrantError('Refresh token expired');
     }
     // Rotate the refresh token.
-    this.refreshTokens.delete(refreshToken);
+    this.refreshTokens.delete(refreshHash);
     const grantedScopes = scopes && scopes.length ? scopes : entry.scopes;
     return this.issueTokens(client.client_id, grantedScopes, entry.resource);
   }
@@ -248,12 +314,14 @@ export class GhlOAuthProvider {
     expiresAt: number;
     resource?: URL;
   }> {
-    const entry = this.accessTokens.get(token);
+    const tokenHash = hashToken(token);
+    const entry = this.accessTokens.get(tokenHash);
     if (!entry) {
       throw new InvalidTokenError('Invalid access token');
     }
     if (entry.expiresAtSec < Math.floor(Date.now() / 1000)) {
-      this.accessTokens.delete(token);
+      this.accessTokens.delete(tokenHash);
+      this.persistStore();
       throw new InvalidTokenError('Access token expired');
     }
     return {
@@ -266,8 +334,10 @@ export class GhlOAuthProvider {
   }
 
   async revokeToken(_client: StoredClient, request: { token: string }): Promise<void> {
-    this.accessTokens.delete(request.token);
-    this.refreshTokens.delete(request.token);
+    const tokenHash = hashToken(request.token);
+    this.accessTokens.delete(tokenHash);
+    this.refreshTokens.delete(tokenHash);
+    this.persistStore();
   }
 
   private issueTokens(clientId: string, scopes: string[], resource?: string): Record<string, unknown> {
@@ -275,13 +345,14 @@ export class GhlOAuthProvider {
     const refreshToken = randomToken(32);
     const expiresAtSec = Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL_SEC;
 
-    this.accessTokens.set(accessToken, { clientId, scopes, resource, expiresAtSec });
-    this.refreshTokens.set(refreshToken, {
+    this.accessTokens.set(hashToken(accessToken), { clientId, scopes, resource, expiresAtSec });
+    this.refreshTokens.set(hashToken(refreshToken), {
       clientId,
       scopes,
       resource,
       expiresAtMs: Date.now() + REFRESH_TOKEN_TTL_MS,
     });
+    this.persistStore();
 
     return {
       access_token: accessToken,

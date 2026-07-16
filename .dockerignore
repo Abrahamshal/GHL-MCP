@@ -1,11 +1,27 @@
+# Dependencies and build output (regenerated inside the image)
 node_modules
-mcp-apps/node_modules
+**/node_modules
 dist
 mcp-apps/dist
 coverage
+
+# The server build (npm run build) only needs src/, scripts/, and the manifests.
+# Everything below is not required to build or run the server image.
+mcp-apps
+tests
+docs
+examples
+.github
+.vscode
+.idea
+
+# VCS, env, and local artifacts
 .git
+.gitignore
 .env
 .env.*
+.eslintcache
 npm-debug.log*
 tmp
 temp
+*.md

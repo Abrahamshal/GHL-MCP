@@ -103,11 +103,24 @@ work in from inside Claude.
    | `GHL_TOOL_PROFILE` | `curated` or `stable` |
 
    You can leave `GHL_API_KEY` / `GHL_LOCATION_ID` unset in this mode.
-4. **Refresh-token persistence:** HighLevel rotates the refresh token on every
-   refresh. Add a Railway **Volume** mounted at `/data` and set
-   `GHL_TOKEN_STORE_PATH=/data/ghl-token.json` so the latest token survives
-   redeploys. Without a volume, a redeploy means re-pasting
-   `GHL_AGENCY_REFRESH_TOKEN`.
+4. **Refresh-token persistence (Railway Volume).** HighLevel rotates the refresh
+   token on every refresh, so the newest one must outlive redeploys. Railway's
+   normal filesystem is wiped on each deploy — a Volume is not. Set it up once:
+   1. Service → **Settings → Volumes → + New Volume**.
+   2. Set **Mount path** to `/data`.
+   3. In **Variables**, set `GHL_TOKEN_STORE_PATH=/data/ghl-token.json`.
+
+   That's it — the server writes the rotated token to `/data/ghl-token.json` and
+   reads it on startup, so you never touch `GHL_AGENCY_REFRESH_TOKEN` again after
+   the first deploy. (The file is created automatically on the first refresh; the
+   parent dir is created if needed.)
+
+   Notes:
+   - A Railway Volume attaches to a single service and forces single-instance
+     deploys — correct here, since token state is per-instance anyway.
+   - The volume holds a live secret; it inherits the service's access controls.
+     `.ghl-agency-token.json` / `*.ghl-token.json` are gitignored so it never lands
+     in the repo.
 
 ### Using it in Claude
 After connecting, just ask: *"list my GHL sub-accounts"* → *"work in Acme Co"* →

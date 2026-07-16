@@ -17,7 +17,8 @@
  * otherwise a redeploy requires re-pasting GHL_AGENCY_REFRESH_TOKEN).
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 
 const LOCATION_TOKEN_VERSION = '2021-07-28';
 const EXPIRY_MARGIN_MS = 60 * 1000; // refresh 60s before actual expiry
@@ -52,6 +53,7 @@ export class AgencyManager {
   private refreshToken: string;
   private companyId?: string;
   private agencyToken?: CachedToken;
+  private refreshInFlight?: Promise<string>;
   private readonly locationTokens = new Map<string, CachedToken>();
   private readonly activeLocation = new Map<string, string>();
   private readonly subAccountNames = new Map<string, string>();
@@ -90,6 +92,17 @@ export class AgencyManager {
     if (this.agencyToken && Date.now() < this.agencyToken.expiresAtMs - EXPIRY_MARGIN_MS) {
       return this.agencyToken.token;
     }
+    // Single-flight: the refresh token rotates on use, so concurrent refreshes
+    // would double-spend it and one would fail. Share one in-flight request.
+    if (!this.refreshInFlight) {
+      this.refreshInFlight = this.doRefresh().finally(() => {
+        this.refreshInFlight = undefined;
+      });
+    }
+    return this.refreshInFlight;
+  }
+
+  private async doRefresh(): Promise<string> {
     const res = await fetch(`${this.baseUrl}/oauth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
@@ -183,6 +196,7 @@ export class AgencyManager {
 
   private persistRefreshToken(): void {
     try {
+      mkdirSync(dirname(this.tokenStorePath), { recursive: true });
       writeFileSync(this.tokenStorePath, JSON.stringify({ refresh_token: this.refreshToken }), { mode: 0o600 });
     } catch (err: any) {
       process.stderr.write(`[Agency] Could not persist rotated refresh token: ${err.message}\n`);

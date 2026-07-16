@@ -73,6 +73,16 @@ await mgr2.getAgencyToken();
 check('reloads persisted refresh token across restarts', true); // if refresh used stale token, mock still returns; assert file value instead
 check('persisted token file has rotated value', JSON.parse(readFileSync(STORE, 'utf8')).refresh_token === 'rt-rotated');
 
+// Single-flight: concurrent refreshes on a fresh manager must hit /oauth/token once.
+calls.token = 0;
+const mgr3 = new AgencyManager({
+  clientId: 'cid', clientSecret: 'csec', refreshToken: 'rt-x',
+  baseUrl: 'https://services.leadconnectorhq.com', version: '2021-07-28', tokenStorePath: '/tmp/agency-smoke-token3.json',
+});
+const [c1, c2, c3] = await Promise.all([mgr3.getAgencyToken(), mgr3.getAgencyToken(), mgr3.getAgencyToken()]);
+check('concurrent refresh is single-flight', calls.token === 1 && c1 === c2 && c2 === c3, `tokenCalls=${calls.token}`);
+try { rmSync('/tmp/agency-smoke-token3.json'); } catch {}
+
 try { rmSync(STORE); } catch {}
 const failed = results.filter((r) => !r).length;
 console.log(`\n${results.length - failed}/${results.length} checks passed`);

@@ -184,3 +184,9 @@ Generated coverage artifacts live in `docs/`. Run `npm run scan:ghl-api` only wh
 - `test-tool` refuses write/destructive tools unless `--confirm` is supplied.
 - Curated workflow tools stage confirmation queues for writes.
 - Use `curated` for beginners and `stable` for production.
+
+## Credits
+
+This project is a fork of and builds on [BusyBee3333/Go-High-Level-MCP-2026-Complete](https://github.com/BusyBee3333/Go-High-Level-MCP-2026-Complete), which provides the underlying GoHighLevel MCP server and tool coverage. That project is licensed under ISC; see [LICENSE](LICENSE) for the original copyright notice.
+
+This fork adds the OAuth 2.1 remote-connector layer and the agency (Company) multi-sub-account mode described above.

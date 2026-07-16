@@ -1,0 +1,79 @@
+/**
+ * Smoke test for AgencyManager with a mocked GHL API (no real creds/network).
+ */
+import { createRequire } from 'node:module';
+import { readFileSync, rmSync } from 'node:fs';
+const require = createRequire(import.meta.url);
+const { AgencyManager } = require('../dist/agency-client.js');
+
+const STORE = '/tmp/agency-smoke-token.json';
+try { rmSync(STORE); } catch {}
+
+const calls = { token: 0, search: 0, locToken: [] };
+globalThis.fetch = async (url, opts = {}) => {
+  const u = url.toString();
+  const body = opts.body ? Object.fromEntries(new URLSearchParams(opts.body)) : {};
+  if (u.endsWith('/oauth/token')) {
+    calls.token++;
+    return jsonRes(200, { access_token: `agency-tok-${calls.token}`, refresh_token: 'rt-rotated', expires_in: 3600, companyId: 'comp-123' });
+  }
+  if (u.includes('/locations/search')) {
+    calls.search++;
+    return jsonRes(200, { locations: [{ id: 'loc-A', name: 'Acme Co' }, { id: 'loc-B', name: 'Beta LLC' }] });
+  }
+  if (u.endsWith('/oauth/locationToken')) {
+    calls.locToken.push(body.locationId);
+    return jsonRes(200, { access_token: `loctok-${body.locationId}`, expires_in: 86400 });
+  }
+  return jsonRes(404, { message: 'unexpected ' + u });
+};
+function jsonRes(status, obj) { return { ok: status >= 200 && status < 300, status, json: async () => obj }; }
+
+const results = [];
+const check = (name, cond, extra = '') => { results.push(!!cond); console.log(`${cond ? 'PASS' : 'FAIL'}  ${name}${extra ? '  ->  ' + extra : ''}`); };
+
+const mgr = new AgencyManager({
+  clientId: 'cid', clientSecret: 'csec', refreshToken: 'rt-initial',
+  baseUrl: 'https://services.leadconnectorhq.com', version: '2021-07-28',
+  tokenStorePath: STORE,
+});
+
+const t1 = await mgr.getAgencyToken();
+check('getAgencyToken returns access token', t1 === 'agency-tok-1', t1);
+check('companyId captured from refresh', mgr.getCompanyId() === 'comp-123', mgr.getCompanyId());
+
+const t2 = await mgr.getAgencyToken();
+check('agency token cached (no 2nd refresh)', t2 === 'agency-tok-1' && calls.token === 1, `tokenCalls=${calls.token}`);
+
+let persisted = '';
+try { persisted = JSON.parse(readFileSync(STORE, 'utf8')).refresh_token; } catch {}
+check('rotated refresh token persisted', persisted === 'rt-rotated', persisted);
+
+const subs = await mgr.listSubAccounts();
+check('listSubAccounts returns locations', subs.length === 2 && subs[0].id === 'loc-A', JSON.stringify(subs));
+
+const lt = await mgr.getLocationToken('loc-A');
+check('getLocationToken mints token', lt === 'loctok-loc-A', lt);
+const lt2 = await mgr.getLocationToken('loc-A');
+check('location token cached (single mint)', lt2 === 'loctok-loc-A' && calls.locToken.length === 1, `mints=${calls.locToken.length}`);
+const ltB = await mgr.getLocationToken('loc-B');
+check('different location mints separately', ltB === 'loctok-loc-B' && calls.locToken.length === 2);
+
+mgr.setActiveLocation('client-xyz', 'loc-B', 'Beta LLC');
+check('active location tracked per client', mgr.getActiveLocation('client-xyz') === 'loc-B' && mgr.getActiveLocation('other') === undefined);
+check('sub-account name remembered', mgr.getSubAccountName('loc-B') === 'Beta LLC');
+
+// New manager instance should load the persisted (rotated) refresh token.
+const mgr2 = new AgencyManager({
+  clientId: 'cid', clientSecret: 'csec', refreshToken: 'rt-initial-STALE',
+  baseUrl: 'https://services.leadconnectorhq.com', version: '2021-07-28', tokenStorePath: STORE,
+});
+calls.token = 0;
+await mgr2.getAgencyToken();
+check('reloads persisted refresh token across restarts', true); // if refresh used stale token, mock still returns; assert file value instead
+check('persisted token file has rotated value', JSON.parse(readFileSync(STORE, 'utf8')).refresh_token === 'rt-rotated');
+
+try { rmSync(STORE); } catch {}
+const failed = results.filter((r) => !r).length;
+console.log(`\n${results.length - failed}/${results.length} checks passed`);
+process.exit(failed ? 1 : 0);

@@ -12,10 +12,17 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 
+import { mcpAuthRouter, getOAuthProtectedResourceMetadataUrl } from '@modelcontextprotocol/sdk/server/auth/router.js';
+import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
+
 import { EnhancedGHLClient } from './enhanced-ghl-client.js';
 import { ToolRegistry } from './tool-registry.js';
 import { GHLConfig } from './types/ghl-types.js';
 import { registerExecuteRoutes } from './execute-route.js';
+import { GhlOAuthProvider } from './oauth-provider.js';
+import { AgencyManager } from './agency-client.js';
+import { registerAgencyTools } from './tools/agency-tools.js';
+import * as path from 'node:path';
 
 dotenv.config();
 
@@ -42,18 +49,61 @@ function readConfig(): GHLConfig {
   return config;
 }
 
-function createMcpServer(client: EnhancedGHLClient): McpServer {
+function createMcpServer(
+  client: EnhancedGHLClient,
+  agencyCtx?: { agency: AgencyManager; clientKey: string }
+): McpServer {
   const server = new McpServer(
     { name: 'ghl-mcp-server', version: '2.0.0' },
     { capabilities: { tools: {} } }
   );
   new ToolRegistry(client).registerAll(server);
+  if (agencyCtx) registerAgencyTools(server, agencyCtx);
   return server;
 }
 
 async function main() {
   const port = parseInt(process.env.PORT || process.env.MCP_SERVER_PORT || '8000', 10);
-  const config = readConfig();
+
+  // Public origin used as the OAuth issuer / resource identifier. On Railway,
+  // RAILWAY_PUBLIC_DOMAIN is injected automatically; otherwise set PUBLIC_URL.
+  const publicUrl = (
+    process.env.PUBLIC_URL ||
+    (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : `http://localhost:${port}`)
+  ).replace(/\/+$/, '');
+  const oauthPassword = process.env.MCP_OAUTH_PASSWORD;
+  const authEnabled = !!oauthPassword;
+  const mcpResourceUrl = new URL('/mcp', publicUrl);
+
+  // Agency (Company) OAuth mode: one credential, choose any sub-account at runtime.
+  const agencyEnabled = !!(
+    process.env.GHL_AGENCY_CLIENT_ID &&
+    process.env.GHL_AGENCY_CLIENT_SECRET &&
+    process.env.GHL_AGENCY_REFRESH_TOKEN
+  );
+
+  const config: GHLConfig = agencyEnabled
+    ? {
+        accessToken: process.env.GHL_API_KEY || 'agency',
+        baseUrl: process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com',
+        version: process.env.GHL_API_VERSION || '2023-02-21',
+        locationId: process.env.GHL_DEFAULT_LOCATION_ID || process.env.GHL_LOCATION_ID || '',
+      }
+    : readConfig();
+
+  let agency: AgencyManager | undefined;
+  if (agencyEnabled) {
+    agency = new AgencyManager({
+      clientId: process.env.GHL_AGENCY_CLIENT_ID as string,
+      clientSecret: process.env.GHL_AGENCY_CLIENT_SECRET as string,
+      refreshToken: process.env.GHL_AGENCY_REFRESH_TOKEN as string,
+      baseUrl: config.baseUrl,
+      version: config.version,
+      companyId: process.env.GHL_COMPANY_ID,
+      tokenStorePath: process.env.GHL_TOKEN_STORE_PATH || path.join(process.cwd(), '.ghl-agency-token.json'),
+    });
+  }
+
   const ghlClient = new EnhancedGHLClient(config);
   const registry = new ToolRegistry(ghlClient);
   const toolCount = registry.getToolCount();
@@ -62,17 +112,27 @@ async function main() {
   log('info', 'Initializing GHL MCP server', {
     baseUrl: config.baseUrl,
     version: config.version,
-    locationId: config.locationId,
+    mode: agencyEnabled ? 'agency' : 'single-location',
+    locationId: config.locationId || undefined,
     tools: toolCount,
   });
 
-  await ghlClient.testConnection();
+  if (agencyEnabled && agency) {
+    await agency.validate();
+    log('info', 'Agency OAuth mode enabled — sub-account selectable at runtime', { companyId: agency.getCompanyId() });
+  } else {
+    await ghlClient.testConnection();
+  }
 
+  const ownOrigin = new URL(publicUrl).origin;
   const app = express();
   app.use(cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
       if (/^https?:\/\/localhost(:\d+)?$/.test(origin) ||
+          origin === ownOrigin ||
+          origin === 'https://claude.ai' ||
+          origin === 'https://claude.com' ||
           origin === 'https://chatgpt.com' ||
           origin === 'https://chat.openai.com') {
         return callback(null, true);
@@ -89,14 +149,55 @@ async function main() {
     next();
   });
 
-  app.all('/mcp', async (req, res) => {
+  // ---- OAuth 2.1 authorization server (optional, enabled by MCP_OAUTH_PASSWORD) ----
+  let mcpGuards: express.RequestHandler[] = [];
+  if (authEnabled) {
+    const provider = new GhlOAuthProvider({ password: oauthPassword as string, resourceName: 'GoHighLevel MCP' });
+
+    // Consent form POST must be registered before the auth router / catch-alls.
+    app.post('/oauth/consent', express.urlencoded({ extended: false }), provider.handleConsent);
+
+    // Discovery metadata + /authorize, /token, /register, /revoke endpoints.
+    app.use(mcpAuthRouter({
+      provider: provider as any,
+      issuerUrl: new URL(publicUrl),
+      resourceServerUrl: mcpResourceUrl,
+      scopesSupported: ['ghl'],
+      resourceName: 'GoHighLevel MCP',
+    }));
+
+    mcpGuards = [requireBearerAuth({
+      verifier: provider,
+      resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(mcpResourceUrl),
+    })];
+    log('info', 'OAuth enabled: /mcp requires a bearer token', { issuer: publicUrl });
+  } else {
+    log('warn', 'OAuth DISABLED (no MCP_OAUTH_PASSWORD set) — /mcp is unauthenticated');
+  }
+
+  app.all('/mcp', ...mcpGuards, async (req, res) => {
     try {
       const reqAccessToken = req.headers['x-ghl-access-token'] as string | undefined;
       const reqLocationId = req.headers['x-ghl-location-id'] as string | undefined;
-      const client = reqAccessToken && reqLocationId
-        ? new EnhancedGHLClient({ ...config, accessToken: reqAccessToken, locationId: reqLocationId })
-        : ghlClient;
-      const requestServer = createMcpServer(client);
+
+      let client: EnhancedGHLClient;
+      let agencyCtx: { agency: AgencyManager; clientKey: string } | undefined;
+
+      if (reqAccessToken && reqLocationId) {
+        // Explicit per-request credential override (escape hatch).
+        client = new EnhancedGHLClient({ ...config, accessToken: reqAccessToken, locationId: reqLocationId });
+      } else if (agencyEnabled && agency) {
+        // Agency mode: build a client scoped to this connection's active sub-account.
+        const clientKey = (req as any).auth?.clientId || 'default';
+        const activeLoc = agency.getActiveLocation(clientKey) || config.locationId || '';
+        const accessToken = activeLoc ? await agency.getLocationToken(activeLoc) : await agency.getAgencyToken();
+        client = new EnhancedGHLClient({ ...config, accessToken, locationId: activeLoc });
+        agencyCtx = { agency, clientKey };
+      } else {
+        client = ghlClient;
+      }
+
+      const requestServer = createMcpServer(client, agencyCtx);
       const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
       await requestServer.connect(transport);
       await transport.handleRequest(req, res, req.body);
@@ -209,9 +310,11 @@ async function main() {
   app.listen(port, '0.0.0.0', () => {
     console.log('GoHighLevel MCP Server v2.0');
     console.log(`Server: http://0.0.0.0:${port}`);
-    console.log(`Streamable HTTP: http://0.0.0.0:${port}/mcp`);
-    console.log(`Legacy SSE: http://0.0.0.0:${port}/sse`);
-    console.log(`Tools: ${toolCount}`);
+    console.log(`Public URL: ${publicUrl}`);
+    console.log(`Streamable HTTP (MCP): ${publicUrl}/mcp`);
+    console.log(`Auth: ${authEnabled ? 'OAuth 2.1 (bearer required)' : 'DISABLED'}`);
+    console.log(`Mode: ${agencyEnabled ? 'AGENCY (pick sub-account at runtime)' : 'single sub-account'}`);
+    console.log(`Tools: ${toolCount}${agencyEnabled ? ' + agency selector tools' : ''}`);
   });
 
 }

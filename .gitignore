@@ -50,5 +50,9 @@ pids/
 
 # Temporary folders
 tmp/
-temp/ 
+temp/
 .vercel
+
+# Agency OAuth refresh-token store (contains a live secret)
+.ghl-agency-token.json
+*.ghl-token.json

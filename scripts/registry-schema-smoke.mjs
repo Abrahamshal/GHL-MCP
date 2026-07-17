@@ -85,6 +85,10 @@ check('widgetPatch stages for confirmation', wStageText.includes('stagedActions'
 const wExec = await mcpClient.callTool({ name: 'crm_conversation_workspace', arguments: { widgetId: 'w-1', widgetPatch: { default: true }, executeConfirmed: true } });
 check('widgetPatch executes on confirm (reaches API)', /executed/.test(JSON.stringify(wExec.content ?? wExec)));
 
+// JSON-string objects (stale-schema clients) must coerce to records.
+const wStr = await mcpClient.callTool({ name: 'crm_conversation_workspace', arguments: { widgetId: 'w-1', widgetPatch: '{"default": true}' } });
+check('JSON-string object coerces (widgetPatch stages)', JSON.stringify(wStr.content ?? wStr).includes('stagedActions'));
+
 // Stale-schema clients send scalars as strings — booleans/numbers must coerce.
 const coerced = await mcpClient.callTool({ name: 'crm_conversation_workspace', arguments: { includeWidgets: 'true', contactId: 'k-1' } });
 const coercedText = JSON.stringify(coerced.content ?? coerced);

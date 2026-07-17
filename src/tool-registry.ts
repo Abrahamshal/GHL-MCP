@@ -169,6 +169,13 @@ const lenientNumber = z.preprocess(
   (v) => (typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v)) ? Number(v) : v),
   z.number()
 );
+const parseJsonish = (v: unknown): unknown => {
+  if (typeof v !== 'string') return v;
+  const t = v.trim();
+  if (!(t.startsWith('{') || t.startsWith('['))) return v;
+  try { return JSON.parse(t); } catch { return v; }
+};
+const lenientRecord = z.preprocess(parseJsonish, z.record(z.string(), z.any()));
 
 function jsonSchemaPropToZod(prop: any): ZodType {
   let type: ZodType;
@@ -181,8 +188,8 @@ function jsonSchemaPropToZod(prop: any): ZodType {
       case 'number': type = lenientNumber; break;
       case 'integer': type = lenientNumber; break;
       case 'boolean': type = lenientBoolean; break;
-      case 'array': type = z.array(prop.items ? jsonSchemaPropToZod(prop.items) : z.any()); break;
-      case 'object': type = z.record(z.string(), z.any()); break;
+      case 'array': type = z.preprocess(parseJsonish, z.array(prop.items ? jsonSchemaPropToZod(prop.items) : z.any())) as unknown as ZodType; break;
+      case 'object': type = lenientRecord; break;
       default: type = z.any();
     }
   }

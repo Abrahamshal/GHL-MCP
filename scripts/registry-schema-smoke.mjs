@@ -78,6 +78,11 @@ check('builder workspace registered', !!builderRead);
 const coverage = await mcpClient.callTool({ name: 'crm_list_workspaces', arguments: {} });
 check('coverage map present', JSON.stringify(coverage.content ?? coverage).includes('apiCategoryCoverage'));
 
+// Stale-schema clients send scalars as strings — booleans/numbers must coerce.
+const coerced = await mcpClient.callTool({ name: 'crm_conversation_workspace', arguments: { includeWidgets: 'true', contactId: 'k-1' } });
+const coercedText = JSON.stringify(coerced.content ?? coerced);
+check('string "true" coerces to boolean (widgets read attempted)', coercedText.includes('Chat widgets'), coercedText.slice(0, 120));
+
 const failed = results.filter((r) => !r).length;
 console.log(`\n${results.length - failed}/${results.length} checks passed`);
 process.exit(failed ? 1 : 0);

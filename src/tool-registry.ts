@@ -159,6 +159,17 @@ function inferAnnotations(toolName: string, meta?: any): ToolAnnotations {
  * the goal is that parameter names/descriptions surface to clients and
  * arguments flow through.
  */
+// Clients with stale/untyped schema caches often serialize scalars as strings
+// ("true", "50"). Coerce the unambiguous cases instead of rejecting the call.
+const lenientBoolean = z.preprocess(
+  (v) => (v === 'true' ? true : v === 'false' ? false : v),
+  z.boolean()
+);
+const lenientNumber = z.preprocess(
+  (v) => (typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v)) ? Number(v) : v),
+  z.number()
+);
+
 function jsonSchemaPropToZod(prop: any): ZodType {
   let type: ZodType;
   if (Array.isArray(prop?.enum) && prop.enum.length > 0) {
@@ -167,9 +178,9 @@ function jsonSchemaPropToZod(prop: any): ZodType {
   } else {
     switch (prop?.type) {
       case 'string': type = z.string(); break;
-      case 'number': type = z.number(); break;
-      case 'integer': type = z.number().int(); break;
-      case 'boolean': type = z.boolean(); break;
+      case 'number': type = lenientNumber; break;
+      case 'integer': type = lenientNumber; break;
+      case 'boolean': type = lenientBoolean; break;
       case 'array': type = z.array(prop.items ? jsonSchemaPropToZod(prop.items) : z.any()); break;
       case 'object': type = z.record(z.string(), z.any()); break;
       default: type = z.any();

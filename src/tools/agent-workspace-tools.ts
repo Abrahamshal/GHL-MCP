@@ -1078,18 +1078,20 @@ function resultSummary(readResults: unknown[], actions: WorkflowAction[]): JsonR
   };
 }
 
-function summarizeData(data: unknown): unknown {
-  if (Array.isArray(data)) return { count: data.length, items: data.slice(0, 5) };
+// Trim long LISTS to keep envelopes lean, but never drop object keys — resource
+// configs (widget settings, calendar configs) must round-trip losslessly or
+// read-then-write flows silently destroy fields.
+function summarizeData(data: unknown, depth = 0): unknown {
+  const arrayCap = depth <= 1 ? 25 : 100;
+  if (Array.isArray(data)) {
+    return data.length > arrayCap
+      ? { count: data.length, items: data.slice(0, arrayCap).map((v) => summarizeData(v, depth + 1)) }
+      : data.map((v) => summarizeData(v, depth + 1));
+  }
   if (!isRecord(data)) return data;
   const summary: JsonRecord = {};
   for (const [key, value] of Object.entries(data)) {
-    if (Array.isArray(value)) {
-      summary[key] = { count: value.length, items: value.slice(0, 5) };
-    } else if (isRecord(value)) {
-      summary[key] = Object.fromEntries(Object.entries(value).slice(0, 12));
-    } else {
-      summary[key] = value;
-    }
+    summary[key] = summarizeData(value, depth + 1);
   }
   return summary;
 }

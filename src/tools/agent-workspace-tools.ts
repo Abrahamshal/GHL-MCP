@@ -29,6 +29,20 @@ type WorkspaceToolSpec = {
     /** Override the GHL Version header (e.g. 'v3' for the chat-widget API). */
     version?: string;
   }>;
+  /**
+   * Endpoint-level staged writes (builder tools). Without executeConfirmed the
+   * tool returns a preview of these actions; with executeConfirmed: true it
+   * executes them in order and reports per-action results. Items whose path()
+   * returns undefined are skipped, so one spec can cover create vs update.
+   */
+  writePlan?: Array<{
+    label: string;
+    method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    path: (args: JsonRecord, locationId: string) => string | undefined;
+    body?: (args: JsonRecord, locationId: string) => JsonRecord;
+    version?: string;
+    destructive?: boolean;
+  }>;
 };
 
 const CONTACT_FIELDS = {
@@ -656,10 +670,125 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
     required: ['email'],
     buildActions: (args, locationId) => [action('Create user', 'create_user', { locationId: stringArg(args.locationId) || locationId, ...pick(args, ['email', 'firstName', 'lastName', 'role']) }, 'write', true)],
   },
+  // ─── CRM Builder: configure a sub-account (calendars, fields, widgets…) ───
+  {
+    name: 'crm_builder_workspace',
+    title: 'Open CRM Builder Workspace',
+    description: 'Gather a sub-account\'s configuration surface for build-out work: calendars, forms, custom fields, custom values, tags, pipelines, chat widgets, and funnels.',
+    app: 'crm-builder',
+    access: 'read',
+    inputProperties: {},
+    readPlan: [
+      { label: 'Calendars', tool: 'get_calendars', method: 'GET', version: '2021-04-15', path: (_a, locationId) => `/calendars/?locationId=${enc(locationId)}` },
+      { label: 'Forms', tool: 'get_forms', method: 'GET', path: (_a, locationId) => `/forms/?locationId=${enc(locationId)}` },
+      { label: 'Custom fields', tool: 'get_custom_fields', method: 'GET', path: (_a, locationId) => `/locations/${enc(locationId)}/customFields` },
+      { label: 'Custom values', tool: 'get_custom_values', method: 'GET', path: (_a, locationId) => `/locations/${enc(locationId)}/customValues` },
+      { label: 'Tags', tool: 'get_tags', method: 'GET', path: (_a, locationId) => `/locations/${enc(locationId)}/tags` },
+      { label: 'Pipelines', tool: 'get_pipelines', method: 'GET', path: (_a, locationId) => `/opportunities/pipelines?locationId=${enc(locationId)}` },
+      { label: 'Chat widgets', tool: 'list_chat_widgets', method: 'GET', version: 'v3', path: (_a, locationId) => `/chat-widget/list?locationId=${enc(locationId)}&offset=0&limit=50` },
+      { label: 'Funnels', tool: 'list_funnels', method: 'GET', path: (_a, locationId) => `/funnels/funnel/list?locationId=${enc(locationId)}` },
+    ],
+  },
+  {
+    name: 'crm_prepare_calendar',
+    title: 'Prepare Calendar Create/Update',
+    description: 'Stage a calendar create (no calendarId) or update (with calendarId). Pass calendar settings in the "calendar" object per the GHL calendar schema (name, slug, slotDuration, etc.). Re-call with executeConfirmed: true after the user approves.',
+    app: 'crm-builder',
+    access: 'write',
+    inputProperties: {
+      calendarId: { type: 'string', description: 'Existing calendar to update; omit to create.' },
+      calendar: { type: 'object', description: 'Calendar fields per the GHL calendars API (name, description, slug, slotDuration, calendarType, teamMembers, etc.).' },
+    },
+    required: ['calendar'],
+    writePlan: [
+      { label: 'Create calendar', method: 'POST', version: '2021-04-15', path: (args) => stringArg(args.calendarId) ? undefined : '/calendars/', body: (args, locationId) => ({ locationId, ...(args.calendar as JsonRecord || {}) }) },
+      { label: 'Update calendar', method: 'PUT', version: '2021-04-15', path: (args) => stringArg(args.calendarId) ? `/calendars/${stringArg(args.calendarId)}` : undefined, body: (args) => ({ ...(args.calendar as JsonRecord || {}) }) },
+    ],
+  },
+  {
+    name: 'crm_prepare_custom_field',
+    title: 'Prepare Custom Field Create/Update',
+    description: 'Stage a location custom-field create (no fieldId) or update (with fieldId). Re-call with executeConfirmed: true after the user approves.',
+    app: 'crm-builder',
+    access: 'write',
+    inputProperties: {
+      fieldId: { type: 'string', description: 'Existing custom field to update; omit to create.' },
+      name: { type: 'string' },
+      dataType: { type: 'string', description: 'e.g. TEXT, LARGE_TEXT, NUMERICAL, PHONE, MONETORY, CHECKBOX, SINGLE_OPTIONS, MULTIPLE_OPTIONS, DATE, FILE_UPLOAD' },
+      options: { type: 'array', items: { type: 'string' }, description: 'For option-type fields.' },
+      field: { type: 'object', description: 'Additional custom-field properties merged into the payload (placeholder, position, model, etc.).' },
+    },
+    required: ['name'],
+    writePlan: [
+      { label: 'Create custom field', method: 'POST', path: (args, locationId) => stringArg(args.fieldId) ? undefined : `/locations/${enc(locationId)}/customFields`, body: (args) => compact({ name: args.name, dataType: args.dataType || 'TEXT', options: args.options, ...(args.field as JsonRecord || {}) }) },
+      { label: 'Update custom field', method: 'PUT', path: (args, locationId) => stringArg(args.fieldId) ? `/locations/${enc(locationId)}/customFields/${stringArg(args.fieldId)}` : undefined, body: (args) => compact({ name: args.name, dataType: args.dataType, options: args.options, ...(args.field as JsonRecord || {}) }) },
+    ],
+  },
+  {
+    name: 'crm_prepare_custom_value',
+    title: 'Prepare Custom Value Create/Update',
+    description: 'Stage a location custom-value create (no valueId) or update (with valueId). Re-call with executeConfirmed: true after the user approves.',
+    app: 'crm-builder',
+    access: 'write',
+    inputProperties: {
+      valueId: { type: 'string', description: 'Existing custom value to update; omit to create.' },
+      name: { type: 'string' },
+      value: { type: 'string' },
+    },
+    required: ['name', 'value'],
+    writePlan: [
+      { label: 'Create custom value', method: 'POST', path: (args, locationId) => stringArg(args.valueId) ? undefined : `/locations/${enc(locationId)}/customValues`, body: (args) => ({ name: args.name, value: args.value }) },
+      { label: 'Update custom value', method: 'PUT', path: (args, locationId) => stringArg(args.valueId) ? `/locations/${enc(locationId)}/customValues/${stringArg(args.valueId)}` : undefined, body: (args) => ({ name: args.name, value: args.value }) },
+    ],
+  },
+  {
+    name: 'crm_prepare_tag',
+    title: 'Prepare Tag Create/Update',
+    description: 'Stage a location tag create (no tagId) or rename (with tagId). Re-call with executeConfirmed: true after the user approves.',
+    app: 'crm-builder',
+    access: 'write',
+    inputProperties: {
+      tagId: { type: 'string', description: 'Existing tag to rename; omit to create.' },
+      name: { type: 'string' },
+    },
+    required: ['name'],
+    writePlan: [
+      { label: 'Create tag', method: 'POST', path: (args, locationId) => stringArg(args.tagId) ? undefined : `/locations/${enc(locationId)}/tags`, body: (args) => ({ name: args.name }) },
+      { label: 'Update tag', method: 'PUT', path: (args, locationId) => stringArg(args.tagId) ? `/locations/${enc(locationId)}/tags/${stringArg(args.tagId)}` : undefined, body: (args) => ({ name: args.name }) },
+    ],
+  },
+  {
+    name: 'crm_prepare_chat_widget',
+    title: 'Prepare Chat Widget Create/Update/Clone',
+    description: 'Stage a chat-widget create (no widgetId), update (widgetId), or clone (widgetId + clone: true) using the v3 chat-widget API. Pass widget settings in the "widget" object. Re-call with executeConfirmed: true after the user approves.',
+    app: 'crm-builder',
+    access: 'write',
+    inputProperties: {
+      widgetId: { type: 'string', description: 'Existing widget to update or clone; omit to create.' },
+      clone: { type: 'boolean', description: 'With widgetId: clone it instead of updating.' },
+      widget: { type: 'object', description: 'Widget fields per the GHL v3 chat-widget schema (name, chatType, appearance, prompts, etc.).' },
+    },
+    writePlan: [
+      { label: 'Create chat widget', method: 'POST', version: 'v3', path: (args) => stringArg(args.widgetId) ? undefined : '/chat-widget/', body: (args, locationId) => ({ locationId, ...(args.widget as JsonRecord || {}) }) },
+      { label: 'Clone chat widget', method: 'POST', version: 'v3', path: (args) => (stringArg(args.widgetId) && args.clone) ? '/chat-widget/clone' : undefined, body: (args, locationId) => ({ locationId, widgetId: stringArg(args.widgetId), ...(args.widget as JsonRecord || {}) }) },
+      { label: 'Update chat widget', method: 'PATCH', version: 'v3', path: (args, locationId) => (stringArg(args.widgetId) && !args.clone) ? `/chat-widget/data/${enc(locationId)}/${stringArg(args.widgetId)}` : undefined, body: (args) => ({ ...(args.widget as JsonRecord || {}) }) },
+    ],
+  },
 ];
 
 export class AgentWorkspaceTools {
+  /**
+   * Executes a raw tool by name regardless of the active profile. Wired by the
+   * ToolRegistry so confirmation-gated actions staged by prepare_* tools can
+   * actually run when the user approves (executeConfirmed: true).
+   */
+  private rawExecutor?: (name: string, args: JsonRecord) => Promise<unknown>;
+
   constructor(private ghlClient: GHLApiClient) {}
+
+  setRawExecutor(executor: (name: string, args: JsonRecord) => Promise<unknown>): void {
+    this.rawExecutor = executor;
+  }
 
   getToolDefinitions(): Tool[] {
     return WORKSPACE_SPECS.map((spec) => ({
@@ -669,7 +798,7 @@ export class AgentWorkspaceTools {
         type: 'object',
         properties: {
           locationId: { type: 'string', description: 'GHL location/subaccount ID. Defaults to configured GHL_LOCATION_ID.' },
-          executeConfirmed: { type: 'boolean', description: 'Reserved for future direct execution. Current tools always return a staged confirmation queue.' },
+          executeConfirmed: { type: 'boolean', description: 'Set true ONLY after the user has explicitly confirmed the staged actions; the tool then executes the writes and reports per-action results. Omit to stage a preview.' },
           ...(spec.inputProperties || {}),
         },
         required: spec.required || [],
@@ -697,8 +826,74 @@ export class AgentWorkspaceTools {
     if (name === 'crm_list_workspaces') return this.listWorkspaces();
 
     const locationId = locationArg(args, this.ghlClient.getConfig().locationId);
+    const confirmed = args.executeConfirmed === true;
+
+    // Endpoint-level staged writes (crm-builder tools).
+    if (spec.writePlan) {
+      const applicable = spec.writePlan
+        .map((item) => ({ item, path: item.path(args, locationId) }))
+        .filter((x): x is { item: NonNullable<WorkspaceToolSpec['writePlan']>[number]; path: string } => !!x.path);
+      if (!applicable.length) {
+        return { workflow: { name: spec.name, title: spec.title, app: spec.app, access: spec.access }, summary: 'No applicable action for the provided arguments.', locationId };
+      }
+      if (!confirmed) {
+        return {
+          workflow: { name: spec.name, title: spec.title, app: spec.app, access: spec.access },
+          summary: `${spec.title} staged ${applicable.length} write action${applicable.length === 1 ? '' : 's'} for confirmation.`,
+          locationId,
+          confirmationRequired: true,
+          stagedActions: applicable.map(({ item, path }) => ({ label: item.label, method: item.method, path, body: item.body?.(args, locationId), destructive: !!item.destructive })),
+          nextSteps: ['Show the staged action(s) to the user.', 'After the user explicitly confirms, call this tool again with the same arguments plus executeConfirmed: true.'],
+        };
+      }
+      const executed = [] as unknown[];
+      for (const { item, path } of applicable) {
+        try {
+          const response = await this.ghlClient.makeRequest(item.method as any, path, item.body?.(args, locationId), item.version ? { version: item.version } : undefined);
+          executed.push({ label: item.label, method: item.method, path, success: response.success, data: response.success ? summarizeData(response.data) : undefined, error: response.success ? undefined : response.error });
+        } catch (error) {
+          executed.push({ label: item.label, method: item.method, path, success: false, error: error instanceof Error ? error.message : String(error) });
+        }
+      }
+      const okCount = executed.filter((x: any) => x.success).length;
+      return {
+        workflow: { name: spec.name, title: spec.title, app: spec.app, access: spec.access },
+        summary: `${spec.title} executed ${okCount}/${executed.length} action${executed.length === 1 ? '' : 's'}.`,
+        locationId,
+        executed,
+      };
+    }
+
     const proposedActions = compactActions(spec.buildActions?.(args, locationId) || actionsFromReadPlan(spec, args, locationId));
     const readResults = spec.readPlan ? await this.runReadPlan(spec, args, locationId) : [];
+
+    // Confirmed execution of staged raw-tool actions (existing prepare_* tools).
+    if (confirmed && spec.access === 'write') {
+      const writes = proposedActions.filter((item) => item.requiresConfirmation && Object.keys(item.arguments).length > 0);
+      if (!this.rawExecutor) {
+        return { workflow: { name: spec.name, title: spec.title, app: spec.app, access: spec.access }, summary: 'Execution is not available on this server build.', locationId };
+      }
+      const executed = [] as unknown[];
+      for (const item of writes) {
+        try {
+          const result = await this.rawExecutor(item.tool, item.arguments);
+          if (result === undefined) {
+            executed.push({ label: item.label, tool: item.tool, success: false, error: `Unknown raw tool: ${item.tool}` });
+          } else {
+            executed.push({ label: item.label, tool: item.tool, success: true, data: summarizeData(result) });
+          }
+        } catch (error) {
+          executed.push({ label: item.label, tool: item.tool, success: false, error: error instanceof Error ? error.message : String(error) });
+        }
+      }
+      const okCount = executed.filter((x: any) => x.success).length;
+      return {
+        workflow: { name: spec.name, title: spec.title, app: spec.app, access: spec.access },
+        summary: `${spec.title} executed ${okCount}/${executed.length} confirmed action${executed.length === 1 ? '' : 's'}.`,
+        locationId,
+        executed,
+      };
+    }
 
     // Read-plan workspaces: the proposed actions just mirror the reads that
     // already ran, so echoing them (plus boilerplate next steps) is noise for
@@ -750,6 +945,36 @@ export class AgentWorkspaceTools {
         readTools: tools.filter((tool) => tool.access === 'read').map((tool) => tool.name),
         writePreparationTools: tools.filter((tool) => tool.access === 'write').map((tool) => tool.name),
       })),
+      // Resource-oriented coverage map: where each GHL API category is reachable
+      // from the curated layer, so gaps are explicit instead of silent.
+      apiCategoryCoverage: {
+        'Contacts': 'contact-workspace',
+        'Conversations': 'conversation-inbox',
+        'Chat Widget': 'crm-builder (list/create/update/clone) + conversation-inbox (list)',
+        'Calendars': 'appointment-desk (events) + crm-builder (calendar setup)',
+        'Custom Fields V2': 'crm-builder',
+        'Custom Values': 'crm-builder',
+        'Tags': 'crm-builder',
+        'Forms': 'crm-builder (list only — GHL API has no form create)',
+        'Funnels': 'crm-builder (list only)',
+        'Opportunities/Pipelines': 'pipeline-board',
+        'Invoices/Payments': 'billing-commerce',
+        'Reviews/Reputation': 'reputation-center',
+        'Ad Manager': 'ads-dashboard',
+        'Workflows': 'automation-launcher (list/enroll only — GHL API has no workflow create)',
+        'Locations/Sub-accounts': 'agency-admin + agency selector tools',
+        'SaaS (pause/enable)': 'agency selector tools (ghl_subaccount_status)',
+        'Snapshots': 'agency-admin',
+        'Users': 'agency-admin',
+        'Email Templates': 'not covered (curated) — available in stable/full profiles',
+        'Blogs': 'not covered (curated) — available in stable/full profiles',
+        'Media Library': 'not covered (curated) — available in stable/full profiles',
+        'Courses': 'not covered',
+        'Brand Boards': 'not covered (newer API; ask to add)',
+        'AI Agent Studio': 'not covered (newer API; ask to add)',
+        'Conversation AI / Voice AI': 'not covered (newer API; ask to add)',
+        'Knowledge Base': 'not covered (newer API; ask to add)',
+      },
       profileHint: 'Set GHL_TOOL_PROFILE=curated to expose only these workflow tools to agents. Use full for all tools, or raw for endpoint-level tools without the curated layer.',
     };
   }

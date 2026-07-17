@@ -62,6 +62,22 @@ check('buildActions read tool keeps proposedActions', JSON.stringify(nextPage.co
 const prep = await mcpClient.callTool({ name: 'crm_prepare_contact_note', arguments: { contactId: 'k-1', body: 'hi' } });
 check('write tool keeps staging envelope', JSON.stringify(prep.content ?? prep).includes('executeToolCalls'));
 
+// Builder workspace: staging vs execution.
+const stage = await mcpClient.callTool({ name: 'crm_prepare_custom_value', arguments: { name: 'brand_color', value: '#ff0000' } });
+const stageText = JSON.stringify(stage.content ?? stage);
+check('builder write stages without executeConfirmed', stageText.includes('stagedActions') && stageText.includes('confirmationRequired'));
+check('staged action previews method+path', stageText.includes('customValues') && stageText.includes('POST'));
+const exec = await mcpClient.callTool({ name: 'crm_prepare_custom_value', arguments: { name: 'brand_color', value: '#ff0000', executeConfirmed: true } });
+const execText = JSON.stringify(exec.content ?? exec);
+check('executeConfirmed attempts execution (reaches API)', execText.includes('executed') && /Invalid JWT|401|success/.test(execText), execText.slice(0, 140));
+const legacyExec = await mcpClient.callTool({ name: 'crm_prepare_contact_note', arguments: { contactId: 'k-1', body: 'hi', executeConfirmed: true } });
+const legacyText = JSON.stringify(legacyExec.content ?? legacyExec);
+check('legacy prepare tool executes via raw executor', legacyText.includes('executed'), legacyText.slice(0, 140));
+const builderRead = tools.find((t) => t.name === 'crm_builder_workspace');
+check('builder workspace registered', !!builderRead);
+const coverage = await mcpClient.callTool({ name: 'crm_list_workspaces', arguments: {} });
+check('coverage map present', JSON.stringify(coverage.content ?? coverage).includes('apiCategoryCoverage'));
+
 const failed = results.filter((r) => !r).length;
 console.log(`\n${results.length - failed}/${results.length} checks passed`);
 process.exit(failed ? 1 : 0);

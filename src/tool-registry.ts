@@ -329,6 +329,14 @@ export class ToolRegistry {
     const officialSpecTools = new OfficialSpecTools(ghl);
     const workflowInsightsTools = new WorkflowInsightsTools(ghl);
     const agentWorkspaceTools = new AgentWorkspaceTools(ghl);
+    // Confirmation-gated workspace writes execute raw tools regardless of the
+    // active profile (the profile controls what agents SEE, not what a
+    // user-confirmed workflow may do).
+    agentWorkspaceTools.setRawExecutor(async (name, args) => {
+      const mod = this.toolToModule.get(name);
+      if (!mod) return undefined;
+      return mod.executeTool(name, args);
+    });
 
     // Register legacy modules (executeTool pattern)
     this.addModule('contact', contactTools, 'getToolDefinitions', 'executeTool');

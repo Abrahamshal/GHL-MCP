@@ -90,6 +90,38 @@ export function registerAgencyTools(server: McpServer, ctx: AgencyToolContext): 
   );
 
   server.registerTool(
+    'ghl_subaccount_status',
+    {
+      title: 'Pause or enable a sub-account',
+      description:
+        'Pause (freeze) or re-enable a GoHighLevel sub-account via the SaaS API. DESTRUCTIVE for the client experience: pausing locks the account. Requires confirm: true, which must only be set after the user explicitly approves.',
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+      inputSchema: {
+        locationId: z.string().describe('The sub-account/location ID to pause or enable'),
+        action: z.enum(['pause', 'unpause']).describe('pause freezes the sub-account; unpause lifts the freeze'),
+        confirm: z.boolean().describe('Must be true. Only set after the user has explicitly confirmed this action.'),
+      },
+    },
+    async ({ locationId, action, confirm }) => {
+      if (confirm !== true) {
+        return errText('Not executed: this action requires confirm: true after explicit user approval.');
+      }
+      try {
+        const companyId = agency.getCompanyId();
+        if (!companyId) return errText('Agency companyId unknown — is the agency connected?');
+        await agency.agencyRequest('POST', `/saas-api/public-api/pause/${encodeURIComponent(locationId)}`, {
+          paused: action === 'pause',
+          companyId,
+        });
+        const label = agency.getSubAccountName(locationId) || locationId;
+        return text(`Sub-account ${label} (${locationId}) is now ${action === 'pause' ? 'PAUSED' : 'active (unpaused)'}.`);
+      } catch (err: any) {
+        return errText(`Failed to ${action} sub-account: ${err.message}`);
+      }
+    }
+  );
+
+  server.registerTool(
     'ghl_current_subaccount',
     {
       title: 'Show active sub-account',

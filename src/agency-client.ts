@@ -228,6 +228,30 @@ export class AgencyManager {
     await this.getAgencyToken();
   }
 
+  /**
+   * Perform a request with the Company (agency) bearer token — for endpoints
+   * whose security is Agency-Access (e.g. the SaaS pause/enable APIs), which
+   * reject location-scoped tokens.
+   */
+  async agencyRequest(method: string, path: string, body?: Record<string, unknown>, version = '2021-04-15'): Promise<any> {
+    const token = await this.getAgencyToken();
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Version: version,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data: any = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(`Agency request failed (${res.status} ${method} ${path}): ${data.message || data.error || 'unknown error'}`);
+    }
+    return data;
+  }
+
   // ---- state persistence (refresh token + active sub-account selections) ----
   private loadPersistedRefreshToken(): void {
     try {

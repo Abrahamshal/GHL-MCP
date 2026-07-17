@@ -295,6 +295,7 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
       contactId: CONTACT_FIELDS.contactId,
       query: { type: 'string' },
       includeWidgets: { type: 'boolean', description: 'Also list the location chat widgets (website live-chat deployments).' },
+      widgetId: { type: 'string', description: 'Fetch the full configuration of one chat widget (branding, settings, prompts).' },
     },
     readPlan: [
       { label: 'Conversation', tool: 'get_conversation', method: 'GET', path: (args) => stringArg(args.conversationId) ? `/conversations/${stringArg(args.conversationId)}` : undefined },
@@ -304,6 +305,7 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
       { label: 'Conversation search', tool: 'search_conversations', method: 'GET', path: (args, locationId) => (stringArg(args.query) || (!stringArg(args.conversationId) && !stringArg(args.contactId))) ? `/conversations/search?locationId=${enc(locationId)}${stringArg(args.query) ? `&query=${enc(stringArg(args.query))}` : ''}` : undefined },
       // Chat-widget API is a v3-generation endpoint (Version: v3, not a date).
       { label: 'Chat widgets', tool: 'list_chat_widgets', method: 'GET', version: 'v3', path: (args, locationId) => args.includeWidgets ? `/chat-widget/list?locationId=${enc(locationId)}&offset=0&limit=50` : undefined },
+      { label: 'Chat widget detail', tool: 'get_chat_widget', method: 'GET', version: 'v3', path: (args, locationId) => stringArg(args.widgetId) ? `/chat-widget/data/${enc(locationId)}/${stringArg(args.widgetId)}` : undefined },
       { label: 'Contact profile', tool: 'get_contact', method: 'GET', path: (args) => stringArg(args.contactId) ? `/contacts/${stringArg(args.contactId)}` : undefined },
     ],
   },

@@ -78,6 +78,13 @@ check('builder workspace registered', !!builderRead);
 const coverage = await mcpClient.callTool({ name: 'crm_list_workspaces', arguments: {} });
 check('coverage map present', JSON.stringify(coverage.content ?? coverage).includes('apiCategoryCoverage'));
 
+// widgetPatch bridge: stages without executeConfirmed, executes with it.
+const wStage = await mcpClient.callTool({ name: 'crm_conversation_workspace', arguments: { widgetId: 'w-1', widgetPatch: { default: true } } });
+const wStageText = JSON.stringify(wStage.content ?? wStage);
+check('widgetPatch stages for confirmation', wStageText.includes('stagedActions') && wStageText.includes('PATCH'));
+const wExec = await mcpClient.callTool({ name: 'crm_conversation_workspace', arguments: { widgetId: 'w-1', widgetPatch: { default: true }, executeConfirmed: true } });
+check('widgetPatch executes on confirm (reaches API)', /executed/.test(JSON.stringify(wExec.content ?? wExec)));
+
 // Stale-schema clients send scalars as strings — booleans/numbers must coerce.
 const coerced = await mcpClient.callTool({ name: 'crm_conversation_workspace', arguments: { includeWidgets: 'true', contactId: 'k-1' } });
 const coercedText = JSON.stringify(coerced.content ?? coerced);

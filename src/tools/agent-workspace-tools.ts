@@ -296,13 +296,14 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
       query: { type: 'string' },
       includeWidgets: { type: 'boolean', description: 'Also list the location chat widgets (website live-chat deployments).' },
       widgetId: { type: 'string', description: 'Fetch the full configuration of one chat widget (branding, settings, prompts).' },
+      widgetPatch: { type: 'object', description: 'With widgetId: stage a PATCH of this widget (settings, name, default). Executes only when executeConfirmed is true after user approval. Temporary alias for crm_prepare_chat_widget for clients with cached tool lists.' },
     },
     readPlan: [
       { label: 'Conversation', tool: 'get_conversation', method: 'GET', path: (args) => stringArg(args.conversationId) ? `/conversations/${stringArg(args.conversationId)}` : undefined },
       { label: 'Messages', tool: 'get_messages', method: 'GET', path: (args) => stringArg(args.conversationId) ? `/conversations/${stringArg(args.conversationId)}/messages?limit=50` : undefined },
       // Broad inbox sweep only when the caller has not targeted a specific
       // record (or explicitly asked to search) — targeted lookups stay lean.
-      { label: 'Conversation search', tool: 'search_conversations', method: 'GET', path: (args, locationId) => (stringArg(args.query) || (!stringArg(args.conversationId) && !stringArg(args.contactId))) ? `/conversations/search?locationId=${enc(locationId)}${stringArg(args.query) ? `&query=${enc(stringArg(args.query))}` : ''}` : undefined },
+      { label: 'Conversation search', tool: 'search_conversations', method: 'GET', path: (args, locationId) => (stringArg(args.query) || (!stringArg(args.conversationId) && !stringArg(args.contactId) && !stringArg(args.widgetId) && !args.includeWidgets)) ? `/conversations/search?locationId=${enc(locationId)}${stringArg(args.query) ? `&query=${enc(stringArg(args.query))}` : ''}` : undefined },
       // Chat-widget API is a v3-generation endpoint (Version: v3, not a date).
       { label: 'Chat widgets', tool: 'list_chat_widgets', method: 'GET', version: 'v3', path: (args, locationId) => args.includeWidgets ? `/chat-widget/list?locationId=${enc(locationId)}&offset=0&limit=50` : undefined },
       { label: 'Chat widget detail', tool: 'get_chat_widget', method: 'GET', version: 'v3', path: (args, locationId) => stringArg(args.widgetId) ? `/chat-widget/data/${enc(locationId)}/${stringArg(args.widgetId)}` : undefined },
@@ -829,6 +830,43 @@ export class AgentWorkspaceTools {
 
     const locationId = locationArg(args, this.ghlClient.getConfig().locationId);
     const confirmed = args.executeConfirmed === true;
+
+    // Temporary bridge: widget PATCH via the conversation workspace, for MCP
+    // clients whose cached tool list predates crm_prepare_chat_widget. Same
+    // staging + executeConfirmed contract as writePlan tools.
+    if (name === 'crm_conversation_workspace' && args.widgetPatch && typeof args.widgetPatch === 'object') {
+      const widgetId = stringArg(args.widgetId);
+      if (!widgetId) {
+        return { workflow: { name, title: spec.title, app: spec.app, access: 'write' }, summary: 'widgetPatch requires widgetId.', locationId };
+      }
+      const path = `/chat-widget/data/${enc(locationId)}/${widgetId}`;
+      if (!confirmed) {
+        return {
+          workflow: { name, title: 'Stage Chat Widget Patch', app: spec.app, access: 'write' },
+          summary: 'Staged 1 write action for confirmation.',
+          locationId,
+          confirmationRequired: true,
+          stagedActions: [{ label: 'Patch chat widget', method: 'PATCH', path, body: args.widgetPatch }],
+          nextSteps: ['Show the staged action to the user.', 'After explicit confirmation, call again with executeConfirmed: true.'],
+        };
+      }
+      try {
+        const response = await this.ghlClient.makeRequest('PATCH', path, args.widgetPatch as JsonRecord, { version: 'v3' });
+        return {
+          workflow: { name, title: 'Patch Chat Widget', app: spec.app, access: 'write' },
+          summary: response.success ? 'Chat widget patched.' : 'Chat widget patch failed.',
+          locationId,
+          executed: [{ label: 'Patch chat widget', method: 'PATCH', path, success: response.success, data: response.success ? summarizeData(response.data) : undefined, error: response.success ? undefined : response.error }],
+        };
+      } catch (error) {
+        return {
+          workflow: { name, title: 'Patch Chat Widget', app: spec.app, access: 'write' },
+          summary: 'Chat widget patch failed.',
+          locationId,
+          executed: [{ label: 'Patch chat widget', method: 'PATCH', path, success: false, error: error instanceof Error ? error.message : String(error) }],
+        };
+      }
+    }
 
     // Endpoint-level staged writes (crm-builder tools).
     if (spec.writePlan) {

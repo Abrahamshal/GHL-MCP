@@ -692,6 +692,26 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
       { label: 'Pipelines', tool: 'get_pipelines', method: 'GET', path: (_a, locationId) => `/opportunities/pipelines?locationId=${enc(locationId)}` },
       { label: 'Chat widgets', tool: 'list_chat_widgets', method: 'GET', version: 'v3', path: (_a, locationId) => `/chat-widget/list?locationId=${enc(locationId)}&offset=0&limit=50` },
       { label: 'Funnels', tool: 'list_funnels', method: 'GET', path: (_a, locationId) => `/funnels/funnel/list?locationId=${enc(locationId)}` },
+      { label: 'Trigger links', tool: 'get_links', method: 'GET', path: (_a, locationId) => `/links/?locationId=${enc(locationId)}` },
+    ],
+  },
+  {
+    name: 'crm_prepare_trigger_link',
+    title: 'Prepare Trigger Link Create/Update/Delete',
+    description: 'Stage a trigger link create (no linkId), update (linkId — e.g. swap the destination URL before an event), or delete (linkId + delete: true). Workflows reference the link entity, so updating its URL updates every workflow that sends it. Re-call with executeConfirmed: true after the user approves.',
+    app: 'crm-builder',
+    access: 'write',
+    inputProperties: {
+      linkId: { type: 'string', description: 'Existing trigger link to update or delete; omit to create.' },
+      name: { type: 'string' },
+      url: { type: 'string', description: 'Destination URL (redirectTo).' },
+      delete: { type: 'boolean', description: 'With linkId: delete the trigger link. Destructive.' },
+    },
+    required: ['name'],
+    writePlan: [
+      { label: 'Create trigger link', method: 'POST', path: (args) => stringArg(args.linkId) ? undefined : '/links/', body: (args, locationId) => ({ locationId, name: args.name, redirectTo: args.url }) },
+      { label: 'Update trigger link', method: 'PUT', path: (args) => (stringArg(args.linkId) && !args.delete) ? `/links/${stringArg(args.linkId)}` : undefined, body: (args) => ({ name: args.name, redirectTo: args.url }) },
+      { label: 'Delete trigger link', method: 'DELETE', destructive: true, path: (args) => (stringArg(args.linkId) && args.delete) ? `/links/${stringArg(args.linkId)}` : undefined },
     ],
   },
   {
@@ -839,6 +859,42 @@ export class AgentWorkspaceTools {
     // carry values on contacts. Read-only; produces deletion CANDIDATES only.
     if (name === 'crm_builder_workspace' && args.audit) {
       return this.customFieldAudit(locationId);
+    }
+
+    // Temporary bridge: trigger-link create/update via the builder workspace,
+    // for MCP clients whose cached tool list predates crm_prepare_trigger_link.
+    if (name === 'crm_builder_workspace' && args.triggerLink && typeof args.triggerLink === 'object') {
+      const tl = args.triggerLink as JsonRecord;
+      const linkId = stringArg(tl.linkId);
+      const method = linkId ? 'PUT' : 'POST';
+      const path = linkId ? `/links/${linkId}` : '/links/';
+      const body = linkId ? { name: tl.name, redirectTo: tl.url } : { locationId, name: tl.name, redirectTo: tl.url };
+      if (!confirmed) {
+        return {
+          workflow: { name, title: 'Stage Trigger Link', app: spec.app, access: 'write' },
+          summary: 'Staged 1 write action for confirmation.',
+          locationId,
+          confirmationRequired: true,
+          stagedActions: [{ label: linkId ? 'Update trigger link' : 'Create trigger link', method, path, body }],
+          nextSteps: ['Show the staged action to the user.', 'After explicit confirmation, call again with executeConfirmed: true.'],
+        };
+      }
+      try {
+        const response = await this.ghlClient.makeRequest(method as any, path, body);
+        return {
+          workflow: { name, title: 'Trigger Link', app: spec.app, access: 'write' },
+          summary: response.success ? 'Trigger link saved.' : 'Trigger link save failed.',
+          locationId,
+          executed: [{ label: linkId ? 'Update trigger link' : 'Create trigger link', method, path, success: response.success, data: response.success ? summarizeData(response.data) : undefined, error: response.success ? undefined : response.error }],
+        };
+      } catch (error) {
+        return {
+          workflow: { name, title: 'Trigger Link', app: spec.app, access: 'write' },
+          summary: 'Trigger link save failed.',
+          locationId,
+          executed: [{ label: 'Trigger link', method, path, success: false, error: error instanceof Error ? error.message : String(error) }],
+        };
+      }
     }
 
     // Temporary bridge: widget PATCH via the conversation workspace, for MCP

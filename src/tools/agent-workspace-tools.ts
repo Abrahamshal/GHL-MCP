@@ -746,18 +746,20 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
   },
   {
     name: 'crm_prepare_tag',
-    title: 'Prepare Tag Create/Update',
-    description: 'Stage a location tag create (no tagId) or rename (with tagId). Re-call with executeConfirmed: true after the user approves.',
+    title: 'Prepare Tag Create/Update/Delete',
+    description: 'Stage a location tag create (no tagId), rename (tagId), or delete (tagId + delete: true — DESTRUCTIVE, removes the tag from all contacts). Re-call with executeConfirmed: true after the user approves.',
     app: 'crm-builder',
     access: 'write',
     inputProperties: {
-      tagId: { type: 'string', description: 'Existing tag to rename; omit to create.' },
+      tagId: { type: 'string', description: 'Existing tag to rename or delete; omit to create.' },
       name: { type: 'string' },
+      delete: { type: 'boolean', description: 'With tagId: delete the tag instead of renaming. Destructive.' },
     },
     required: ['name'],
     writePlan: [
       { label: 'Create tag', method: 'POST', path: (args, locationId) => stringArg(args.tagId) ? undefined : `/locations/${enc(locationId)}/tags`, body: (args) => ({ name: args.name }) },
-      { label: 'Update tag', method: 'PUT', path: (args, locationId) => stringArg(args.tagId) ? `/locations/${enc(locationId)}/tags/${stringArg(args.tagId)}` : undefined, body: (args) => ({ name: args.name }) },
+      { label: 'Update tag', method: 'PUT', path: (args, locationId) => (stringArg(args.tagId) && !args.delete) ? `/locations/${enc(locationId)}/tags/${stringArg(args.tagId)}` : undefined, body: (args) => ({ name: args.name }) },
+      { label: 'Delete tag', method: 'DELETE', destructive: true, path: (args, locationId) => (stringArg(args.tagId) && args.delete) ? `/locations/${enc(locationId)}/tags/${stringArg(args.tagId)}` : undefined },
     ],
   },
   {

@@ -677,10 +677,12 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
   {
     name: 'crm_builder_workspace',
     title: 'Open CRM Builder Workspace',
-    description: 'Gather a sub-account\'s configuration surface for build-out work: calendars, forms, custom fields, custom values, tags, pipelines, chat widgets, and funnels.',
+    description: 'Gather a sub-account\'s configuration surface for build-out work: calendars, forms, custom fields, custom values, tags, pipelines, chat widgets, and funnels. Pass audit: true for a custom-field usage audit (scans all contacts, reports used vs unused fields — deletes nothing).',
     app: 'crm-builder',
     access: 'read',
-    inputProperties: {},
+    inputProperties: {
+      audit: { type: 'boolean', description: 'Run the custom-field usage audit instead of the standard reads.' },
+    },
     readPlan: [
       { label: 'Calendars', tool: 'get_calendars', method: 'GET', version: '2021-04-15', path: (_a, locationId) => `/calendars/?locationId=${enc(locationId)}` },
       { label: 'Forms', tool: 'get_forms', method: 'GET', path: (_a, locationId) => `/forms/?locationId=${enc(locationId)}` },
@@ -832,6 +834,12 @@ export class AgentWorkspaceTools {
 
     const locationId = locationArg(args, this.ghlClient.getConfig().locationId);
     const confirmed = args.executeConfirmed === true;
+
+    // Custom-field usage audit: which of the location's custom fields actually
+    // carry values on contacts. Read-only; produces deletion CANDIDATES only.
+    if (name === 'crm_builder_workspace' && args.audit) {
+      return this.customFieldAudit(locationId);
+    }
 
     // Temporary bridge: widget PATCH via the conversation workspace, for MCP
     // clients whose cached tool list predates crm_prepare_chat_widget. Same
@@ -1018,6 +1026,78 @@ export class AgentWorkspaceTools {
         'Knowledge Base': 'not covered (newer API; ask to add)',
       },
       profileHint: 'Set GHL_TOOL_PROFILE=curated to expose only these workflow tools to agents. Use full for all tools, or raw for endpoint-level tools without the curated layer.',
+    };
+  }
+
+  /**
+   * Scan every custom field definition against every contact's stored values.
+   * Returns used fields (with counts + a sample value) and unused fields —
+   * candidates for cleanup, pending human confirmation. Contact values are the
+   * strongest usage signal, but fields may still be referenced by forms,
+   * workflows, or calendars: the report says so explicitly.
+   */
+  private async customFieldAudit(locationId: string): Promise<unknown> {
+    const loc = encodeURIComponent(locationId);
+    const fieldsResp = await this.ghlClient.makeRequest('GET', `/locations/${loc}/customFields`);
+    if (!fieldsResp.success) {
+      return { audit: 'custom-fields', locationId, error: `Could not list custom fields: ${JSON.stringify(fieldsResp.error)}` };
+    }
+    const fields: any[] = (fieldsResp.data as any)?.customFields || [];
+
+    const usage = new Map<string, number>();
+    const samples = new Map<string, string>();
+    let scanned = 0;
+    let pages = 0;
+    let searchAfter: unknown;
+    let partial = false;
+
+    while (pages < 80) {
+      const body: JsonRecord = { locationId, pageLimit: 100 };
+      if (searchAfter) body.searchAfter = searchAfter;
+      const resp = await this.ghlClient.makeRequest('POST', '/contacts/search', body);
+      if (!resp.success) { partial = scanned > 0; break; }
+      const contacts: any[] = (resp.data as any)?.contacts || [];
+      for (const contact of contacts) {
+        scanned++;
+        for (const cf of contact.customFields || []) {
+          const v = cf?.value;
+          const empty = v === null || v === undefined || v === '' || (Array.isArray(v) && v.length === 0);
+          if (empty) continue;
+          usage.set(cf.id, (usage.get(cf.id) || 0) + 1);
+          if (!samples.has(cf.id)) {
+            const text = Array.isArray(v) ? v.join(', ') : typeof v === 'object' ? JSON.stringify(v) : String(v);
+            samples.set(cf.id, text.slice(0, 60));
+          }
+        }
+      }
+      pages++;
+      if (contacts.length < 100) break;
+      searchAfter = contacts[contacts.length - 1]?.searchAfter;
+      if (!searchAfter) break;
+    }
+    if (pages >= 80) partial = true;
+
+    const usedFields: any[] = [];
+    const unusedFields: any[] = [];
+    for (const f of fields) {
+      const count = usage.get(f.id) || 0;
+      const row = { name: f.name, fieldKey: f.fieldKey, dataType: f.dataType, id: f.id };
+      if (count > 0) usedFields.push({ ...row, contactsWithValue: count, sample: samples.get(f.id) });
+      else unusedFields.push(row);
+    }
+    usedFields.sort((a, b) => b.contactsWithValue - a.contactsWithValue);
+
+    return {
+      audit: 'custom-fields',
+      locationId,
+      totalFields: fields.length,
+      contactsScanned: scanned,
+      scanComplete: !partial,
+      usedOnContacts: usedFields.length,
+      unusedOnContacts: unusedFields.length,
+      note: 'unused = no non-empty value on any scanned contact. A field may still be referenced by forms, workflows, or calendar questions — verify those surfaces before deleting. This audit deletes nothing.',
+      usedFields,
+      unusedFields,
     };
   }
 

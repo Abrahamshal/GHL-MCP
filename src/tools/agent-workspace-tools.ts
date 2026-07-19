@@ -682,6 +682,7 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
     access: 'read',
     inputProperties: {
       audit: { type: 'boolean', description: 'Run the custom-field usage audit instead of the standard reads.' },
+      triggerLink: { type: 'object', description: 'Stage a trigger-link create ({name, url}) or update ({linkId, name, url}). Executes only when executeConfirmed is true after user approval. Temporary alias for crm_prepare_trigger_link for clients with cached tool lists.' },
     },
     readPlan: [
       { label: 'Calendars', tool: 'get_calendars', method: 'GET', version: '2021-04-15', path: (_a, locationId) => `/calendars/?locationId=${enc(locationId)}` },

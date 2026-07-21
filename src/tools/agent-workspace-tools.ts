@@ -683,6 +683,7 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
     inputProperties: {
       audit: { type: 'boolean', description: 'Run the custom-field usage audit instead of the standard reads.' },
       triggerLink: { type: 'object', description: 'Stage a trigger-link create ({name, url}) or update ({linkId, name, url}). Executes only when executeConfirmed is true after user approval. Temporary alias for crm_prepare_trigger_link for clients with cached tool lists.' },
+      deleteFields: { type: 'array', items: { type: 'string' }, description: 'DESTRUCTIVE: custom field ids to bulk-delete. Stages a preview; executes only with executeConfirmed: true after explicit user approval of the vetted list.' },
     },
     readPlan: [
       { label: 'Calendars', tool: 'get_calendars', method: 'GET', version: '2021-04-15', path: (_a, locationId) => `/calendars/?locationId=${enc(locationId)}` },
@@ -860,6 +861,29 @@ export class AgentWorkspaceTools {
     // carry values on contacts. Read-only; produces deletion CANDIDATES only.
     if (name === 'crm_builder_workspace' && args.audit) {
       return this.customFieldAudit(locationId);
+    }
+
+    // DESTRUCTIVE bulk custom-field deletion. Requires an explicit id list AND
+    // executeConfirmed — stages a count preview otherwise.
+    if (name === 'crm_builder_workspace' && Array.isArray(args.deleteFields)) {
+      const ids = (args.deleteFields as unknown[]).map(String).filter(Boolean);
+      if (!confirmed) {
+        return {
+          workflow: { name, title: 'Stage Custom Field Deletion', app: spec.app, access: 'write' },
+          summary: `Staged deletion of ${ids.length} custom fields for confirmation.`,
+          locationId,
+          confirmationRequired: true,
+          stagedActions: [{ label: `Delete ${ids.length} custom fields`, method: 'DELETE', destructive: true, ids }],
+          nextSteps: ['Show the count and sample to the user.', 'After explicit confirmation, call again with executeConfirmed: true.'],
+        };
+      }
+      const result = await this.deleteCustomFields(locationId, ids);
+      return {
+        workflow: { name, title: 'Delete Custom Fields', app: spec.app, access: 'write' },
+        summary: `Deleted ${(result as any).deleted}/${ids.length} custom fields.`,
+        locationId,
+        ...(result as object),
+      };
     }
 
     // Temporary bridge: trigger-link create/update via the builder workspace,
@@ -1101,6 +1125,23 @@ export class AgentWorkspaceTools {
     }
     const fields: any[] = (fieldsResp.data as any)?.customFields || [];
 
+    // Form-usage signal: every form submission ever recorded reveals the fields
+    // that form writes. (Form DEFINITIONS are not exposed by the public API, so
+    // fields on never-submitted forms cannot be detected this way.)
+    const submissionText: string[] = [];
+    let submissionCount = 0;
+    for (let page = 1; page <= 50; page++) {
+      const resp = await this.ghlClient.makeRequest('GET', `/forms/submissions?locationId=${loc}&limit=100&page=${page}`);
+      if (!resp.success) break;
+      const subs: any[] = (resp.data as any)?.submissions || [];
+      if (!subs.length) break;
+      submissionCount += subs.length;
+      submissionText.push(JSON.stringify(subs));
+      if (subs.length < 100) break;
+    }
+    const usedInSubmissions = (f: any): boolean =>
+      submissionText.some((chunk) => chunk.includes(f.id) || (f.fieldKey && chunk.includes(String(f.fieldKey).replace(/^contact\./, ''))));
+
     const usage = new Map<string, number>();
     const samples = new Map<string, string>();
     let scanned = 0;
@@ -1138,11 +1179,12 @@ export class AgentWorkspaceTools {
     const unusedFields: any[] = [];
     for (const f of fields) {
       const count = usage.get(f.id) || 0;
-      const row = { name: f.name, fieldKey: f.fieldKey, dataType: f.dataType, id: f.id };
-      if (count > 0) usedFields.push({ ...row, contactsWithValue: count, sample: samples.get(f.id) });
+      const inForms = usedInSubmissions(f);
+      const row = { name: f.name, fieldKey: f.fieldKey, dataType: f.dataType, id: f.id, standard: !!f.standard, usedInFormSubmissions: inForms };
+      if (count > 0 || inForms) usedFields.push({ ...row, contactsWithValue: count, sample: samples.get(f.id) });
       else unusedFields.push(row);
     }
-    usedFields.sort((a, b) => b.contactsWithValue - a.contactsWithValue);
+    usedFields.sort((a, b) => (b.contactsWithValue || 0) - (a.contactsWithValue || 0));
 
     return {
       audit: 'custom-fields',
@@ -1150,12 +1192,29 @@ export class AgentWorkspaceTools {
       totalFields: fields.length,
       contactsScanned: scanned,
       scanComplete: !partial,
-      usedOnContacts: usedFields.length,
-      unusedOnContacts: unusedFields.length,
-      note: 'unused = no non-empty value on any scanned contact. A field may still be referenced by forms, workflows, or calendar questions — verify those surfaces before deleting. This audit deletes nothing.',
+      formSubmissionsScanned: submissionCount,
+      usedOnContactsOrForms: usedFields.length,
+      unused: unusedFields.length,
+      note: 'unused = no non-empty value on any scanned contact AND never seen in any form submission. Fields on never-submitted forms cannot be detected via API. This audit deletes nothing.',
       usedFields,
       unusedFields,
     };
+  }
+
+  /** Bulk-delete custom fields by id. DESTRUCTIVE — caller must have verified. */
+  private async deleteCustomFields(locationId: string, ids: string[]): Promise<unknown> {
+    const loc = encodeURIComponent(locationId);
+    const results: any[] = [];
+    for (const id of ids) {
+      try {
+        const resp = await this.ghlClient.makeRequest('DELETE', `/locations/${loc}/customFields/${encodeURIComponent(id)}`);
+        results.push({ id, success: resp.success, error: resp.success ? undefined : resp.error });
+      } catch (error) {
+        results.push({ id, success: false, error: error instanceof Error ? error.message : String(error) });
+      }
+    }
+    const ok = results.filter((r) => r.success).length;
+    return { deleted: ok, failed: results.length - ok, results };
   }
 
   private async runReadPlan(spec: WorkspaceToolSpec, args: JsonRecord, locationId: string): Promise<unknown[]> {

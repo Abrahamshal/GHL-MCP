@@ -684,6 +684,8 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
       audit: { type: 'boolean', description: 'Run the custom-field usage audit instead of the standard reads.' },
       triggerLink: { type: 'object', description: 'Stage a trigger-link create ({name, url}) or update ({linkId, name, url}). Executes only when executeConfirmed is true after user approval. Temporary alias for crm_prepare_trigger_link for clients with cached tool lists.' },
       deleteFields: { type: 'array', items: { type: 'string' }, description: 'DESTRUCTIVE: custom field ids to bulk-delete. Stages a preview; executes only with executeConfirmed: true after explicit user approval of the vetted list.' },
+      phoneGapFields: { type: 'array', items: { type: 'string' }, description: 'Custom field ids that may hold phone numbers. Reports contacts whose standard phone is empty but who have a number in one of these fields.' },
+      migratePhones: { type: 'boolean', description: 'With phoneGapFields + executeConfirmed: copy the stranded custom phone into the standard phone field where empty.' },
     },
     readPlan: [
       { label: 'Calendars', tool: 'get_calendars', method: 'GET', version: '2021-04-15', path: (_a, locationId) => `/calendars/?locationId=${enc(locationId)}` },
@@ -861,6 +863,12 @@ export class AgentWorkspaceTools {
     // carry values on contacts. Read-only; produces deletion CANDIDATES only.
     if (name === 'crm_builder_workspace' && args.audit) {
       return this.customFieldAudit(locationId);
+    }
+
+    // Phone-gap scan: contacts whose standard phone is empty but who have a
+    // number in one of the given custom fields. Read-only. Optionally migrate.
+    if (name === 'crm_builder_workspace' && Array.isArray(args.phoneGapFields)) {
+      return this.phoneGap(locationId, (args.phoneGapFields as unknown[]).map(String), args.migratePhones === true && confirmed);
     }
 
     // DESTRUCTIVE bulk custom-field deletion. Requires an explicit id list AND
@@ -1198,6 +1206,76 @@ export class AgentWorkspaceTools {
       note: 'unused = no non-empty value on any scanned contact AND never seen in any form submission. Fields on never-submitted forms cannot be detected via API. This audit deletes nothing.',
       usedFields,
       unusedFields,
+    };
+  }
+
+  /**
+   * Scan contacts for phone numbers stranded in custom fields: standard `phone`
+   * empty, but one of phoneGapFields holds a phone-shaped value. Reports the gap
+   * per field with samples. When migrate=true, copies the FIRST available custom
+   * value into the standard phone field (only where standard is empty).
+   */
+  private async phoneGap(locationId: string, fieldIds: string[], migrate: boolean): Promise<unknown> {
+    const phoneRe = /(?:\+?1[\s.\-]?)?\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4}/;
+    const idSet = new Set(fieldIds);
+    const perField: Record<string, { withValue: number; gap: number; samples: string[] }> = {};
+    for (const id of fieldIds) perField[id] = { withValue: 0, gap: 0, samples: [] };
+
+    let scanned = 0, standardEmpty = 0, anyGap = 0, migrated = 0, migrateFail = 0;
+    const migrateList: { id: string; phone: string; from: string }[] = [];
+    let searchAfter: unknown;
+    for (let page = 0; page < 80; page++) {
+      const body: JsonRecord = { locationId, pageLimit: 100 };
+      if (searchAfter) body.searchAfter = searchAfter;
+      const resp = await this.ghlClient.makeRequest('POST', '/contacts/search', body);
+      if (!resp.success) break;
+      const contacts: any[] = (resp.data as any)?.contacts || [];
+      for (const contact of contacts) {
+        scanned++;
+        const stdPhone = (contact.phone || '').toString().trim();
+        const stdEmpty = !stdPhone;
+        if (stdEmpty) standardEmpty++;
+        let chosen: { fieldId: string; phone: string } | undefined;
+        for (const cf of contact.customFields || []) {
+          if (!idSet.has(cf.id)) continue;
+          const raw = Array.isArray(cf.value) ? cf.value[0] : cf.value;
+          const val = raw == null ? '' : String(raw).trim();
+          if (!val || !phoneRe.test(val)) continue;
+          perField[cf.id].withValue++;
+          if (stdEmpty) {
+            perField[cf.id].gap++;
+            if (perField[cf.id].samples.length < 3) perField[cf.id].samples.push(val);
+            if (!chosen) chosen = { fieldId: cf.id, phone: val };
+          }
+        }
+        if (stdEmpty && chosen) {
+          anyGap++;
+          if (migrate) {
+            try {
+              const up = await this.ghlClient.makeRequest('PUT', `/contacts/${encodeURIComponent(contact.id)}`, { phone: chosen.phone });
+              if (up.success) { migrated++; migrateList.push({ id: contact.id, phone: chosen.phone, from: chosen.fieldId }); }
+              else migrateFail++;
+            } catch { migrateFail++; }
+          }
+        }
+      }
+      if (contacts.length < 100) break;
+      searchAfter = contacts[contacts.length - 1]?.searchAfter;
+      if (!searchAfter) break;
+    }
+
+    return {
+      scan: 'phone-gap',
+      locationId,
+      contactsScanned: scanned,
+      contactsWithEmptyStandardPhone: standardEmpty,
+      contactsRescuable: anyGap,
+      perField,
+      migrated: migrate ? migrated : undefined,
+      migrateFailed: migrate ? migrateFail : undefined,
+      note: migrate
+        ? 'Copied a custom phone into the standard phone field for contacts that had none. Re-run without migratePhones to confirm the gap is now 0, then the phone custom fields are safe to delete.'
+        : 'Read-only. contactsRescuable = contacts with an empty standard phone but a phone-shaped value in one of the given custom fields. Re-run with migratePhones:true + executeConfirmed:true to migrate.',
     };
   }
 

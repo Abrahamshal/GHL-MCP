@@ -907,11 +907,14 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
   },
   {
     name: 'crm_prepare_email_template',
-    title: 'Prepare Email Template Create',
-    description: 'Stage an email-template create from ready-to-send HTML, so a design produced elsewhere can be published into Marketing > Emails > Templates. The template is stored as a raw HTML block, so pass EMAIL-SAFE html: table layout, inline styles, ~600px wide, web-safe font stacks. Flexbox, grid, custom properties and external stylesheets do not survive in Outlook or Gmail. Re-call with executeConfirmed: true after the user approves.',
+    title: 'Prepare Email Template Create/Update',
+    description: 'Stage an email-template create (no templateId) or update (with templateId) from ready-to-send HTML, so a design produced elsewhere can be published into Marketing > Emails > Templates. The template is stored as a raw HTML block, so pass EMAIL-SAFE html: table layout, inline styles, ~600px wide, web-safe font stacks. Flexbox, grid, custom properties and external stylesheets do not survive in Outlook or Gmail. Re-call with executeConfirmed: true after the user approves.',
     app: 'crm-builder',
     access: 'write',
     inputProperties: {
+      templateId: { type: 'string', description: 'Existing template to update; omit to create. On an update, html and plainText are sent together because GHL requires editorContent and editorType as a pair.' },
+      archived: { type: 'boolean', description: 'With templateId: archive or restore the template.' },
+      userId: { type: 'string', description: 'User the change is attributed to.' },
       name: { type: 'string', description: 'Template name as it appears in the template list.' },
       html: { type: 'string', description: 'Email-safe HTML body. GHL merge fields such as {{contact.first_name}} pass through untouched.' },
       subjectLine: { type: 'string', description: 'Default subject line for emails built from this template.' },
@@ -921,10 +924,7 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
       parentFolderId: { type: 'string', description: 'Template folder id to file this template under.' },
       plainText: { type: 'boolean', description: 'Store as a plain-text template (editorType text) rather than HTML.' },
     },
-    required: ['name'],
-    writePlan: [
-      { label: 'Create email template', method: 'POST', version: 'v3', path: (_args, locationId) => `/emails/locations/${enc(locationId)}/templates`, body: (args) => emailTemplateBody(args) },
-    ],
+    writePlan: [],
   },
 ];
 
@@ -1095,6 +1095,13 @@ export class AgentWorkspaceTools {
     if (name === 'crm_prepare_invoice' || name === 'crm_prepare_invoice_schedule' || name === 'crm_prepare_estimate') {
       const actions = await this.buildBillingActions(name, args, locationId);
       return this.stageOrExecute(spec, actions, locationId, confirmed);
+    }
+
+    // Email templates: GHL documents these under both /emails/locations/... (v3)
+    // and /emails/public/v2/locations/..., so each action carries the other as
+    // a 404 fallback rather than betting on one.
+    if (name === 'crm_prepare_email_template') {
+      return this.stageOrExecute(spec, emailTemplateActions(args, locationId), locationId, confirmed);
     }
 
     // Endpoint-level staged writes (crm-builder tools).
@@ -1473,14 +1480,30 @@ export class AgentWorkspaceTools {
         continue;
       }
       try {
-        const response = await this.ghlClient.makeRequest(item.method as any, path, item.body);
+        let usedPath = path;
+        let response = await this.ghlClient.makeRequest(item.method as any, path, item.body, item.version ? { version: item.version } : undefined);
+        if (!response.success && item.fallback && isNotFound(response.error)) {
+          usedPath = item.fallback.path;
+          response = await this.ghlClient.makeRequest(item.method as any, item.fallback.path, item.body, item.fallback.version ? { version: item.fallback.version } : undefined);
+        }
         if (response.success && !createdId) {
           const data = response.data as any;
           createdId = data?._id || data?.id || data?.invoice?._id;
         }
-        executed.push({ label: item.label, method: item.method, path, success: response.success, data: response.success ? summarizeData(response.data) : undefined, error: response.success ? undefined : response.error });
+        executed.push({ label: item.label, method: item.method, path: usedPath, success: response.success, data: response.success ? summarizeData(response.data) : undefined, error: response.success ? undefined : response.error });
       } catch (error) {
-        executed.push({ label: item.label, method: item.method, path, success: false, error: error instanceof Error ? error.message : String(error) });
+        const message = error instanceof Error ? error.message : String(error);
+        if (item.fallback && isNotFound(message)) {
+          try {
+            const response = await this.ghlClient.makeRequest(item.method as any, item.fallback.path, item.body, item.fallback.version ? { version: item.fallback.version } : undefined);
+            executed.push({ label: item.label, method: item.method, path: item.fallback.path, success: response.success, data: response.success ? summarizeData(response.data) : undefined, error: response.success ? undefined : response.error });
+            continue;
+          } catch (fallbackError) {
+            executed.push({ label: item.label, method: item.method, path: item.fallback.path, success: false, error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) });
+            continue;
+          }
+        }
+        executed.push({ label: item.label, method: item.method, path, success: false, error: message });
       }
     }
     const okCount = executed.filter((x: any) => x.success).length;
@@ -1816,6 +1839,10 @@ type StagedWrite = {
   path: string;
   body?: JsonRecord;
   destructive?: boolean;
+  version?: string;
+  // GHL documents two generations of some routes. A 404 means the route does
+  // not exist and nothing happened, so it is safe to retry the other one.
+  fallback?: { path: string; version?: string };
 };
 
 // The invoices and payments APIs address a location as altId + altType rather
@@ -1831,6 +1858,10 @@ function altQuery(locationId: string, args: JsonRecord = {}, filterable = false)
     if (contactId) parts.push(`contactId=${enc(contactId)}`);
   }
   return parts.join('&');
+}
+
+function isNotFound(error: unknown): boolean {
+  return typeof error === 'string' && /\b404\b|not found/i.test(error);
 }
 
 function todayISO(): string {
@@ -1884,17 +1915,44 @@ function billingCore(args: JsonRecord, currency: string, contactDetails: JsonRec
   });
 }
 
-function emailTemplateBody(args: JsonRecord): JsonRecord {
+function emailTemplateBody(args: JsonRecord, isCreate: boolean): JsonRecord {
+  const html = stringArg(args.html);
   return compact({
     name: args.name,
-    editorType: args.plainText === true ? 'text' : 'html',
-    editorContent: args.html,
+    // editorContent and editorType have to travel together, so only send the
+    // type when there is content to describe (or on a create, where it is required).
+    ...(html || isCreate ? { editorType: args.plainText === true ? 'text' : 'html' } : {}),
+    editorContent: html,
     subjectLine: args.subjectLine,
     previewText: args.previewText,
     fromName: args.fromName,
     fromEmail: args.fromEmail,
     parentFolderId: args.parentFolderId,
+    userId: args.userId,
+    ...(typeof args.archived === 'boolean' ? { archived: args.archived } : {}),
   });
+}
+
+function emailTemplateActions(args: JsonRecord, locationId: string): StagedWrite[] {
+  const templateId = stringArg(args.templateId);
+  if (templateId) {
+    return [{
+      label: 'Update email template',
+      method: 'PATCH',
+      path: `/emails/locations/${enc(locationId)}/templates/${enc(templateId)}`,
+      version: 'v3',
+      body: emailTemplateBody(args, false),
+      fallback: { path: `/emails/public/v2/locations/${enc(locationId)}/templates/${enc(templateId)}` },
+    }];
+  }
+  return [{
+    label: 'Create email template',
+    method: 'POST',
+    path: `/emails/locations/${enc(locationId)}/templates`,
+    version: 'v3',
+    body: emailTemplateBody(args, true),
+    fallback: { path: `/emails/public/v2/locations/${enc(locationId)}/templates` },
+  }];
 }
 
 function customFieldBody(args: JsonRecord, isCreate: boolean): JsonRecord {

@@ -582,22 +582,118 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
     app: 'billing-commerce',
     access: 'read',
     readPlan: [
-      { label: 'Invoices', tool: 'list_invoices', method: 'GET', path: (_args, locationId) => `/invoices/?locationId=${enc(locationId)}` },
-      { label: 'Orders', tool: 'list_orders', method: 'GET', path: (_args, locationId) => `/payments/orders?locationId=${enc(locationId)}` },
+      // The invoices and payments APIs address a location as altId + altType,
+      // not locationId. Sending locationId makes GHL fail to resolve the
+      // account and answer 401 Unauthorized, which reads like a permissions
+      // problem but is really a malformed request.
+      { label: 'Invoices', tool: 'list_invoices', method: 'GET', path: (_args, locationId) => `/invoices/?altId=${enc(locationId)}&altType=location&limit=10&offset=0` },
+      { label: 'Orders', tool: 'list_orders', method: 'GET', path: (_args, locationId) => `/payments/orders?altId=${enc(locationId)}&altType=location&limit=10&offset=0` },
+    ],
+  },
+  {
+    name: 'crm_invoice_workspace',
+    title: 'Open Invoice Workspace Data',
+    description: 'Gather the sub-account billing surface in one pass: invoices, estimates, recurring invoice schedules, invoice templates and invoice settings. Read-only.',
+    app: 'billing-commerce',
+    access: 'read',
+    inputProperties: {
+      status: { type: 'string', description: 'Filter invoices by status: draft, sent, payment_processing, paid, void or partially_paid.' },
+      contactId: { type: 'string', description: 'Limit invoices and estimates to a single contact.' },
+      limit: { type: 'number', description: 'Rows per list (default 20).' },
+    },
+    readPlan: [
+      { label: 'Invoices', tool: 'list_invoices', method: 'GET', path: (args, locationId) => `/invoices/?${altQuery(locationId, args, true)}` },
+      { label: 'Estimates', tool: 'list_estimates', method: 'GET', path: (args, locationId) => `/invoices/estimate/list?${altQuery(locationId, args, true)}` },
+      { label: 'Invoice schedules', tool: 'list_invoice_schedules', method: 'GET', path: (args, locationId) => `/invoices/schedule?${altQuery(locationId, args)}` },
+      { label: 'Invoice templates', tool: 'list_invoice_templates', method: 'GET', path: (args, locationId) => `/invoices/template?${altQuery(locationId, args)}` },
+      { label: 'Invoice settings', tool: 'get_invoice_settings', method: 'GET', path: (_args, locationId) => `/invoices/settings?altId=${enc(locationId)}&altType=location` },
     ],
   },
   {
     name: 'crm_prepare_invoice',
     title: 'Prepare Invoice',
-    description: 'Prepare an invoice create/send flow with confirmation before creating or sending billing records.',
+    description: 'Stage the invoice lifecycle with confirmation: create a draft (contactId + items or amount), or act on an existing one with invoiceId plus sendNow, recordPayment, void or delete. The contact and business blocks GHL requires on the payload are resolved for you. Re-call with executeConfirmed: true after the user approves.',
     app: 'billing-commerce',
     access: 'write',
-    inputProperties: { contactId: CONTACT_FIELDS.contactId, invoiceId: { type: 'string' }, amount: { type: 'number' }, memo: { type: 'string' }, sendNow: { type: 'boolean' } },
-    required: ['contactId'],
-    buildActions: (args) => [
-      action('Create invoice', 'create_invoice', pick(args, ['contactId', 'amount', 'memo']), 'write', true),
-      action('Send invoice', 'send_invoice', { invoiceId: args.invoiceId }, 'write', true),
-    ],
+    inputProperties: {
+      contactId: CONTACT_FIELDS.contactId,
+      invoiceId: { type: 'string', description: 'Existing invoice to send, take payment on, void or delete; omit to create a draft.' },
+      name: { type: 'string', description: 'Internal invoice name. Defaults to the title.' },
+      title: { type: 'string', description: 'Invoice title shown to the customer.' },
+      items: { type: 'array', description: 'Line items: [{ name, amount, qty, description?, currency?, productId? }]. Amounts are per unit.' },
+      amount: { type: 'number', description: 'Shorthand for a single line item when items is omitted.' },
+      description: { type: 'string', description: 'Line description used with the amount shorthand.' },
+      currency: { type: 'string', description: 'ISO currency code (default USD).' },
+      issueDate: { type: 'string', description: 'YYYY-MM-DD. Defaults to today.' },
+      dueDate: { type: 'string', description: 'YYYY-MM-DD.' },
+      termsNotes: { type: 'string', description: 'Terms and notes printed on the invoice.' },
+      discountValue: { type: 'number', description: 'Discount amount or percent.' },
+      discountType: { type: 'string', enum: ['percentage', 'fixed'], description: 'How discountValue is applied (default percentage).' },
+      sendNow: { type: 'boolean', description: 'Send the invoice. On a create this sends the newly created draft.' },
+      sendAction: { type: 'string', enum: ['email', 'sms', 'sms_and_email', 'send_manually'], description: 'Delivery channel when sending (default email).' },
+      recordPayment: { type: 'object', description: 'Record a manual payment: { mode: cash|card|cheque|bank_transfer|other, amount, notes?, chequeNumber? }.' },
+      void: { type: 'boolean', description: 'With invoiceId: void the invoice. Destructive.' },
+      delete: { type: 'boolean', description: 'With invoiceId: delete the invoice. Destructive.' },
+      liveMode: { type: 'boolean', description: 'False stages against test mode (default true).' },
+      userId: { type: 'string', description: 'User the send is attributed to.' },
+    },
+    writePlan: [],
+  },
+  {
+    name: 'crm_prepare_invoice_schedule',
+    title: 'Prepare Recurring Invoice Schedule',
+    description: 'Stage a recurring invoice schedule: create (contactId + items + schedule), update, start sending (start: true), change auto-payment, cancel or delete. Re-call with executeConfirmed: true after the user approves.',
+    app: 'billing-commerce',
+    access: 'write',
+    inputProperties: {
+      scheduleId: { type: 'string', description: 'Existing schedule to update, start, cancel or delete; omit to create.' },
+      contactId: CONTACT_FIELDS.contactId,
+      name: { type: 'string', description: 'Schedule name.' },
+      title: { type: 'string' },
+      items: { type: 'array', description: 'Line items: [{ name, amount, qty, description? }].' },
+      amount: { type: 'number', description: 'Shorthand for a single line item.' },
+      description: { type: 'string' },
+      currency: { type: 'string', description: 'ISO currency code (default USD).' },
+      schedule: { type: 'object', description: 'Recurrence per the GHL schedule options: { executeAt, rrule: { intervalType, interval, startDate, ... } }.' },
+      termsNotes: { type: 'string' },
+      discountValue: { type: 'number' },
+      discountType: { type: 'string', enum: ['percentage', 'fixed'] },
+      start: { type: 'boolean', description: 'With scheduleId: begin sending the scheduled invoice to the customer.' },
+      cancel: { type: 'boolean', description: 'With scheduleId: cancel the scheduled invoice. Destructive.' },
+      delete: { type: 'boolean', description: 'With scheduleId: delete the schedule. Destructive.' },
+      autoPayment: { type: 'object', description: 'Auto-payment settings to apply to the schedule.' },
+      liveMode: { type: 'boolean' },
+    },
+    writePlan: [],
+  },
+  {
+    name: 'crm_prepare_estimate',
+    title: 'Prepare Estimate',
+    description: 'Stage an estimate: create (contactId + items), update, send, delete, or convert an accepted estimate into an invoice (toInvoice: true). Re-call with executeConfirmed: true after the user approves.',
+    app: 'billing-commerce',
+    access: 'write',
+    inputProperties: {
+      estimateId: { type: 'string', description: 'Existing estimate to update, send, delete or convert; omit to create.' },
+      contactId: CONTACT_FIELDS.contactId,
+      name: { type: 'string' },
+      title: { type: 'string' },
+      items: { type: 'array', description: 'Line items: [{ name, amount, qty, description? }].' },
+      amount: { type: 'number', description: 'Shorthand for a single line item.' },
+      description: { type: 'string' },
+      currency: { type: 'string', description: 'ISO currency code (default USD).' },
+      issueDate: { type: 'string', description: 'YYYY-MM-DD. Defaults to today.' },
+      expiryDate: { type: 'string', description: 'YYYY-MM-DD.' },
+      termsNotes: { type: 'string' },
+      discountValue: { type: 'number' },
+      discountType: { type: 'string', enum: ['percentage', 'fixed'] },
+      sendNow: { type: 'boolean', description: 'Send the estimate to the contact.' },
+      sendAction: { type: 'string', enum: ['email', 'sms', 'sms_and_email', 'send_manually'] },
+      toInvoice: { type: 'boolean', description: 'With estimateId: convert the estimate into an invoice.' },
+      delete: { type: 'boolean', description: 'With estimateId: delete the estimate. Destructive.' },
+      liveMode: { type: 'boolean' },
+      userId: { type: 'string' },
+    },
+    writePlan: [],
   },
   {
     name: 'crm_prepare_invoice_followup',
@@ -992,6 +1088,15 @@ export class AgentWorkspaceTools {
       }
     }
 
+    // Invoice, schedule and estimate writes. These need the contactDetails and
+    // businessDetails blocks GHL requires on the payload, which means a lookup
+    // before the body can be built — so they resolve first and then stage
+    // through the same contract as writePlan tools.
+    if (name === 'crm_prepare_invoice' || name === 'crm_prepare_invoice_schedule' || name === 'crm_prepare_estimate') {
+      const actions = await this.buildBillingActions(name, args, locationId);
+      return this.stageOrExecute(spec, actions, locationId, confirmed);
+    }
+
     // Endpoint-level staged writes (crm-builder tools).
     if (spec.writePlan) {
       const applicable = spec.writePlan
@@ -1150,6 +1255,238 @@ export class AgentWorkspaceTools {
    * strongest usage signal, but fields may still be referenced by forms,
    * workflows, or calendars: the report says so explicitly.
    */
+  /**
+   * Resolve the contact and business blocks that the invoice, schedule and
+   * estimate payloads require. Both are best-effort: a lookup failure degrades
+   * to the minimum GHL will accept rather than failing the whole staging.
+   */
+  private async billingParties(locationId: string, contactId?: string): Promise<{ contactDetails?: JsonRecord; businessDetails: JsonRecord }> {
+    let contactDetails: JsonRecord | undefined;
+    if (contactId) {
+      try {
+        const response = await this.ghlClient.makeRequest('GET', `/contacts/${enc(contactId)}`);
+        const contact = ((response.data as any)?.contact || response.data || {}) as JsonRecord;
+        const fullName = [stringArg(contact.firstName), stringArg(contact.lastName)].filter(Boolean).join(' ').trim();
+        contactDetails = compact({
+          id: contactId,
+          name: fullName || stringArg(contact.name) || stringArg(contact.contactName) || stringArg(contact.email) || 'Customer',
+          email: contact.email,
+          phoneNo: contact.phone,
+          companyName: contact.companyName,
+          address: stringArg(contact.address1) ? compact({
+            addressLine1: contact.address1,
+            city: contact.city,
+            state: contact.state,
+            countryCode: contact.country,
+            postalCode: contact.postalCode,
+          }) : undefined,
+        });
+      } catch {
+        contactDetails = { id: contactId, name: 'Customer' };
+      }
+    }
+    let businessDetails: JsonRecord = {};
+    try {
+      const response = await this.ghlClient.makeRequest('GET', `/locations/${enc(locationId)}`);
+      const location = ((response.data as any)?.location || response.data || {}) as JsonRecord;
+      businessDetails = compact({
+        name: location.name,
+        phoneNo: location.phone,
+        website: location.website,
+        logoUrl: location.logoUrl,
+        address: stringArg(location.address) ? compact({
+          addressLine1: location.address,
+          city: location.city,
+          state: location.state,
+          countryCode: location.country,
+          postalCode: location.postalCode,
+        }) : undefined,
+      });
+    } catch {
+      // businessDetails is optional on the payload; an empty object is valid.
+    }
+    return { contactDetails, businessDetails };
+  }
+
+  private async buildBillingActions(name: string, args: JsonRecord, locationId: string): Promise<StagedWrite[]> {
+    const alt = { altId: locationId, altType: 'location' as const };
+    const altQs = `altId=${enc(locationId)}&altType=location`;
+    const liveMode = args.liveMode !== false;
+    const currency = (stringArg(args.currency) || 'USD').toUpperCase();
+    const sendAction = stringArg(args.sendAction) || 'email';
+    const userId = stringArg(args.userId);
+    const actions: StagedWrite[] = [];
+
+    if (name === 'crm_prepare_invoice') {
+      const invoiceId = stringArg(args.invoiceId);
+      if (invoiceId) {
+        const payment = args.recordPayment as JsonRecord | undefined;
+        if (payment && typeof payment === 'object') {
+          actions.push({
+            label: 'Record invoice payment',
+            method: 'POST',
+            path: `/invoices/${enc(invoiceId)}/record-payment`,
+            body: compact({
+              ...alt,
+              mode: stringArg(payment.mode) || 'other',
+              amount: numberArg(payment.amount),
+              notes: stringArg(payment.notes) || '',
+              ...(stringArg(payment.chequeNumber) ? { cheque: { number: stringArg(payment.chequeNumber) } } : {}),
+            }),
+          });
+        }
+        if (args.sendNow) {
+          actions.push({ label: 'Send invoice', method: 'POST', path: `/invoices/${enc(invoiceId)}/send`, body: compact({ ...alt, action: sendAction, liveMode, userId }) });
+        }
+        if (args.void) {
+          actions.push({ label: 'Void invoice', method: 'POST', path: `/invoices/${enc(invoiceId)}/void`, body: { ...alt }, destructive: true });
+        }
+        if (args.delete) {
+          actions.push({ label: 'Delete invoice', method: 'DELETE', path: `/invoices/${enc(invoiceId)}?${altQs}`, destructive: true });
+        }
+        return actions;
+      }
+      const { contactDetails, businessDetails } = await this.billingParties(locationId, stringArg(args.contactId));
+      actions.push({
+        label: 'Create invoice',
+        method: 'POST',
+        path: '/invoices/',
+        body: compact({
+          ...alt,
+          ...billingCore(args, currency, contactDetails, businessDetails),
+          issueDate: stringArg(args.issueDate) || todayISO(),
+          dueDate: args.dueDate,
+          liveMode,
+          sentTo: sentToBlock(contactDetails),
+        }),
+      });
+      if (args.sendNow) {
+        actions.push({ label: 'Send invoice (after create)', method: 'POST', path: '/invoices/{invoiceId}/send', body: compact({ ...alt, action: sendAction, liveMode, userId }) });
+      }
+      return actions;
+    }
+
+    if (name === 'crm_prepare_invoice_schedule') {
+      const scheduleId = stringArg(args.scheduleId);
+      if (scheduleId) {
+        if (args.autoPayment && typeof args.autoPayment === 'object') {
+          actions.push({ label: 'Update schedule auto-payment', method: 'POST', path: `/invoices/schedule/${enc(scheduleId)}/auto-payment`, body: { ...alt, id: scheduleId, autoPayment: args.autoPayment } });
+        }
+        if (args.start) {
+          actions.push({ label: 'Start sending schedule', method: 'POST', path: `/invoices/schedule/${enc(scheduleId)}/schedule`, body: compact({ ...alt, liveMode }) });
+        }
+        if (args.cancel) {
+          actions.push({ label: 'Cancel scheduled invoice', method: 'POST', path: `/invoices/schedule/${enc(scheduleId)}/cancel`, body: { ...alt }, destructive: true });
+        }
+        if (args.delete) {
+          actions.push({ label: 'Delete schedule', method: 'DELETE', path: `/invoices/schedule/${enc(scheduleId)}?${altQs}`, destructive: true });
+        }
+        if (!actions.length) {
+          const { contactDetails, businessDetails } = await this.billingParties(locationId, stringArg(args.contactId));
+          actions.push({
+            label: 'Update schedule',
+            method: 'PUT',
+            path: `/invoices/schedule/${enc(scheduleId)}`,
+            body: compact({ ...alt, ...billingCore(args, currency, contactDetails, businessDetails), schedule: args.schedule, liveMode }),
+          });
+        }
+        return actions;
+      }
+      const { contactDetails, businessDetails } = await this.billingParties(locationId, stringArg(args.contactId));
+      actions.push({
+        label: 'Create invoice schedule',
+        method: 'POST',
+        path: '/invoices/schedule',
+        body: compact({ ...alt, ...billingCore(args, currency, contactDetails, businessDetails), schedule: args.schedule, liveMode }),
+      });
+      return actions;
+    }
+
+    // crm_prepare_estimate
+    const estimateId = stringArg(args.estimateId);
+    if (estimateId) {
+      if (args.toInvoice) {
+        actions.push({ label: 'Convert estimate to invoice', method: 'POST', path: `/invoices/estimate/${enc(estimateId)}/invoice`, body: { ...alt, markAsInvoiced: true } });
+      }
+      if (args.sendNow) {
+        actions.push({ label: 'Send estimate', method: 'POST', path: `/invoices/estimate/${enc(estimateId)}/send`, body: compact({ ...alt, action: sendAction, liveMode, userId, estimateName: args.name }) });
+      }
+      if (args.delete) {
+        actions.push({ label: 'Delete estimate', method: 'DELETE', path: `/invoices/estimate/${enc(estimateId)}?${altQs}`, destructive: true });
+      }
+      if (!actions.length) {
+        const { contactDetails, businessDetails } = await this.billingParties(locationId, stringArg(args.contactId));
+        actions.push({
+          label: 'Update estimate',
+          method: 'PUT',
+          path: `/invoices/estimate/${enc(estimateId)}`,
+          body: compact({ ...alt, ...billingCore(args, currency, contactDetails, businessDetails), issueDate: args.issueDate, expiryDate: args.expiryDate, liveMode }),
+        });
+      }
+      return actions;
+    }
+    const { contactDetails, businessDetails } = await this.billingParties(locationId, stringArg(args.contactId));
+    actions.push({
+      label: 'Create estimate',
+      method: 'POST',
+      path: '/invoices/estimate',
+      body: compact({
+        ...alt,
+        ...billingCore(args, currency, contactDetails, businessDetails),
+        issueDate: stringArg(args.issueDate) || todayISO(),
+        expiryDate: args.expiryDate,
+        liveMode,
+        sentTo: sentToBlock(contactDetails),
+      }),
+    });
+    return actions;
+  }
+
+  /**
+   * Shared staging/execution contract for the billing write tools: preview the
+   * actions, or run them in order once the user has confirmed.
+   */
+  private async stageOrExecute(spec: WorkspaceToolSpec, actions: StagedWrite[], locationId: string, confirmed: boolean): Promise<unknown> {
+    const workflow = { name: spec.name, title: spec.title, app: spec.app, access: spec.access };
+    if (!actions.length) {
+      return { workflow, summary: 'No applicable action for the provided arguments.', locationId };
+    }
+    if (!confirmed) {
+      return {
+        workflow,
+        summary: `${spec.title} staged ${actions.length} write action${actions.length === 1 ? '' : 's'} for confirmation.`,
+        locationId,
+        confirmationRequired: true,
+        stagedActions: actions.map((item) => ({ label: item.label, method: item.method, path: item.path, body: item.body, destructive: !!item.destructive })),
+        nextSteps: ['Show the staged action(s) to the user.', 'After the user explicitly confirms, call this tool again with the same arguments plus executeConfirmed: true.'],
+      };
+    }
+    const executed = [] as unknown[];
+    let createdId: string | undefined;
+    for (const item of actions) {
+      // A send staged alongside a create only learns its id once the create returns.
+      const path = item.path.includes('{invoiceId}')
+        ? (createdId ? item.path.replace('{invoiceId}', enc(createdId)) : '')
+        : item.path;
+      if (!path) {
+        executed.push({ label: item.label, method: item.method, path: item.path, success: false, error: 'Skipped: the create step did not return an invoice id.' });
+        continue;
+      }
+      try {
+        const response = await this.ghlClient.makeRequest(item.method as any, path, item.body);
+        if (response.success && !createdId) {
+          const data = response.data as any;
+          createdId = data?._id || data?.id || data?.invoice?._id;
+        }
+        executed.push({ label: item.label, method: item.method, path, success: response.success, data: response.success ? summarizeData(response.data) : undefined, error: response.success ? undefined : response.error });
+      } catch (error) {
+        executed.push({ label: item.label, method: item.method, path, success: false, error: error instanceof Error ? error.message : String(error) });
+      }
+    }
+    const okCount = executed.filter((x: any) => x.success).length;
+    return { workflow, summary: `${spec.title} executed ${okCount}/${executed.length} action${executed.length === 1 ? '' : 's'}.`, locationId, executed };
+  }
+
   private async customFieldAudit(locationId: string): Promise<unknown> {
     const loc = encodeURIComponent(locationId);
     const fieldsResp = await this.ghlClient.makeRequest('GET', `/locations/${loc}/customFields`);
@@ -1471,6 +1808,80 @@ function normalizeFieldOptions(value: unknown): string[] | undefined {
     })
     .filter(Boolean);
   return options.length ? options : undefined;
+}
+
+type StagedWrite = {
+  label: string;
+  method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  path: string;
+  body?: JsonRecord;
+  destructive?: boolean;
+};
+
+// The invoices and payments APIs address a location as altId + altType rather
+// than locationId; sending locationId makes GHL answer 401 Unauthorized.
+function altQuery(locationId: string, args: JsonRecord = {}, filterable = false): string {
+  const parts = [`altId=${enc(locationId)}`, 'altType=location', `limit=${numberArg(args.limit) || 20}`, 'offset=0'];
+  // status and contactId only filter the invoice and estimate lists; schedules
+  // and templates reject them.
+  if (filterable) {
+    const status = stringArg(args.status);
+    if (status) parts.push(`status=${enc(status)}`);
+    const contactId = stringArg(args.contactId);
+    if (contactId) parts.push(`contactId=${enc(contactId)}`);
+  }
+  return parts.join('&');
+}
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Line items carry the money, so an invoice with none is rejected. Accept a
+// full items array, or the amount/description shorthand for the common
+// single-line case.
+function invoiceItems(args: JsonRecord, currency: string): JsonRecord[] {
+  const supplied = Array.isArray(args.items) ? args.items : [];
+  const items = supplied
+    .map((entry) => {
+      const item = (entry && typeof entry === 'object' ? entry : {}) as JsonRecord;
+      const amount = numberArg(item.amount);
+      if (amount === undefined) return undefined;
+      return compact({
+        name: stringArg(item.name) || stringArg(args.title) || 'Item',
+        description: item.description,
+        currency: (stringArg(item.currency) || currency).toUpperCase(),
+        amount,
+        qty: numberArg(item.qty) ?? 1,
+        productId: item.productId,
+        priceId: item.priceId,
+      });
+    })
+    .filter((item): item is JsonRecord => !!item);
+  if (items.length) return items;
+  const amount = numberArg(args.amount);
+  if (amount === undefined) return [];
+  return [compact({ name: stringArg(args.description) || stringArg(args.title) || 'Services', currency, amount, qty: 1 })];
+}
+
+function sentToBlock(contactDetails?: JsonRecord): JsonRecord | undefined {
+  const email = contactDetails && stringArg(contactDetails.email);
+  return email ? { email: [email] } : undefined;
+}
+
+// The fields every invoice, schedule and estimate payload shares.
+function billingCore(args: JsonRecord, currency: string, contactDetails: JsonRecord | undefined, businessDetails: JsonRecord): JsonRecord {
+  const title = stringArg(args.title) || stringArg(args.name) || 'Invoice';
+  return compact({
+    name: stringArg(args.name) || title,
+    title,
+    currency,
+    items: invoiceItems(args, currency),
+    discount: compact({ type: stringArg(args.discountType) || 'percentage', value: numberArg(args.discountValue) ?? 0 }),
+    termsNotes: args.termsNotes,
+    contactDetails,
+    businessDetails,
+  });
 }
 
 function emailTemplateBody(args: JsonRecord): JsonRecord {

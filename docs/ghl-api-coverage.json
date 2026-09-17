@@ -1,8 +1,8 @@
 {
   "official": {
     "repo": "https://github.com/GoHighLevel/highlevel-api-docs.git",
-    "commit": "ae4d260aada8e4340e1603a5573f977778e13ffd",
-    "tag": "ae4d260",
+    "commit": "0af86a4cbd48c66a4071c7e509d1079f9f10ed17",
+    "tag": "0af86a4",
     "endpoints": [
       {
         "key": "GET /ad-publishing/facebook/reporting",
@@ -11565,6 +11565,54 @@
         "caller": "makeRequest"
       },
       {
+        "key": "GET /locations/{}/customFields",
+        "method": "GET",
+        "path": "/locations/{param}/customFields",
+        "normalizedPath": "/locations/{}/customFields",
+        "sourceFile": "src/tools/agent-workspace-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "GET /forms/submissions",
+        "method": "GET",
+        "path": "/forms/submissions",
+        "normalizedPath": "/forms/submissions",
+        "sourceFile": "src/tools/agent-workspace-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "POST /contacts/search",
+        "method": "POST",
+        "path": "/contacts/search",
+        "normalizedPath": "/contacts/search",
+        "sourceFile": "src/tools/agent-workspace-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "POST /contacts/search",
+        "method": "POST",
+        "path": "/contacts/search",
+        "normalizedPath": "/contacts/search",
+        "sourceFile": "src/tools/agent-workspace-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "PUT /contacts/{}",
+        "method": "PUT",
+        "path": "/contacts/{param}",
+        "normalizedPath": "/contacts/{}",
+        "sourceFile": "src/tools/agent-workspace-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "DELETE /locations/{}/customFields/{}",
+        "method": "DELETE",
+        "path": "/locations/{param}/customFields/{param}",
+        "normalizedPath": "/locations/{}/customFields/{}",
+        "sourceFile": "src/tools/agent-workspace-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
         "key": "GET /businesses",
         "method": "GET",
         "path": "/businesses/",
@@ -15861,7 +15909,7 @@
         "caller": "official-spec-generated"
       }
     ],
-    "filesScanned": 59
+    "filesScanned": 62
   },
   "comparison": {
     "coveredCount": 590,

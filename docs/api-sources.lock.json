@@ -5,8 +5,8 @@
   "officialDocs": {
     "repo": "https://github.com/GoHighLevel/highlevel-api-docs.git",
     "branch": "main",
-    "commit": "ae4d260aada8e4340e1603a5573f977778e13ffd",
-    "tag": "ae4d260",
+    "commit": "0af86a4cbd48c66a4071c7e509d1079f9f10ed17",
+    "tag": "0af86a4",
     "expectedEndpointReferences": 590,
     "expectedUniqueEndpoints": 590
   },

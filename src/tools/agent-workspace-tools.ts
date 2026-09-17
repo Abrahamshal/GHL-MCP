@@ -743,14 +743,18 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
     inputProperties: {
       fieldId: { type: 'string', description: 'Existing custom field to update; omit to create.' },
       name: { type: 'string' },
-      dataType: { type: 'string', description: 'e.g. TEXT, LARGE_TEXT, NUMERICAL, PHONE, MONETORY, CHECKBOX, SINGLE_OPTIONS, MULTIPLE_OPTIONS, DATE, FILE_UPLOAD' },
-      options: { type: 'array', items: { type: 'string' }, description: 'For option-type fields.' },
-      field: { type: 'object', description: 'Additional custom-field properties merged into the payload (placeholder, position, model, etc.).' },
+      dataType: { type: 'string', description: 'TEXT, LARGE_TEXT, NUMERICAL, FLOAT, PHONE, MONETORY (GHL spells it that way), CHECKBOX, SINGLE_OPTIONS, MULTIPLE_OPTIONS, RADIO, DATE, DATE_TIME, TIME, TEXTBOX_LIST, FILE_UPLOAD, SIGNATURE, URL, USER, RICH_TEXT or FORMULA. Everyday aliases (DROPDOWN, SELECT, TEXTAREA, NUMBER, CURRENCY/MONETARY, MULTI_SELECT, FILE...) are normalized to these.' },
+      options: { type: 'array', items: { type: 'string' }, description: 'Choices for option-type fields (SINGLE_OPTIONS, MULTIPLE_OPTIONS, CHECKBOX, RADIO, TEXTBOX_LIST). Plain strings; {key,label} objects are also accepted and reduced to their label.' },
+      placeholder: { type: 'string', description: 'Placeholder text shown inside the field.' },
+      model: { type: 'string', description: 'Record the field belongs to: contact (default) or opportunity.' },
+      parentId: { type: 'string', description: 'Custom-field folder id to file this field under.' },
+      position: { type: 'number', description: 'Sort position within the folder.' },
+      field: { type: 'object', description: 'Any further custom-field properties merged into the payload (acceptedFormat, maxFileLimit, etc.).' },
     },
     required: ['name'],
     writePlan: [
-      { label: 'Create custom field', method: 'POST', path: (args, locationId) => stringArg(args.fieldId) ? undefined : `/locations/${enc(locationId)}/customFields`, body: (args) => compact({ name: args.name, dataType: args.dataType || 'TEXT', options: args.options, ...(args.field as JsonRecord || {}) }) },
-      { label: 'Update custom field', method: 'PUT', path: (args, locationId) => stringArg(args.fieldId) ? `/locations/${enc(locationId)}/customFields/${stringArg(args.fieldId)}` : undefined, body: (args) => compact({ name: args.name, dataType: args.dataType, options: args.options, ...(args.field as JsonRecord || {}) }) },
+      { label: 'Create custom field', method: 'POST', path: (args, locationId) => stringArg(args.fieldId) ? undefined : `/locations/${enc(locationId)}/customFields`, body: (args) => customFieldBody(args, true) },
+      { label: 'Update custom field', method: 'PUT', path: (args, locationId) => stringArg(args.fieldId) ? `/locations/${enc(locationId)}/customFields/${stringArg(args.fieldId)}` : undefined, body: (args) => customFieldBody(args, false) },
     ],
   },
   {
@@ -803,6 +807,27 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
       { label: 'Create chat widget', method: 'POST', version: 'v3', path: (args) => stringArg(args.widgetId) ? undefined : '/chat-widget/', body: (args, locationId) => ({ locationId, ...(args.widget as JsonRecord || {}) }) },
       { label: 'Clone chat widget', method: 'POST', version: 'v3', path: (args) => (stringArg(args.widgetId) && args.clone) ? '/chat-widget/clone' : undefined, body: (args, locationId) => ({ locationId, widgetId: stringArg(args.widgetId), ...(args.widget as JsonRecord || {}) }) },
       { label: 'Update chat widget', method: 'PATCH', version: 'v3', path: (args, locationId) => (stringArg(args.widgetId) && !args.clone) ? `/chat-widget/data/${enc(locationId)}/${stringArg(args.widgetId)}` : undefined, body: (args) => ({ ...(args.widget as JsonRecord || {}) }) },
+    ],
+  },
+  {
+    name: 'crm_prepare_email_template',
+    title: 'Prepare Email Template Create',
+    description: 'Stage an email-template create from ready-to-send HTML, so a design produced elsewhere can be published into Marketing > Emails > Templates. The template is stored as a raw HTML block, so pass EMAIL-SAFE html: table layout, inline styles, ~600px wide, web-safe font stacks. Flexbox, grid, custom properties and external stylesheets do not survive in Outlook or Gmail. Re-call with executeConfirmed: true after the user approves.',
+    app: 'crm-builder',
+    access: 'write',
+    inputProperties: {
+      name: { type: 'string', description: 'Template name as it appears in the template list.' },
+      html: { type: 'string', description: 'Email-safe HTML body. GHL merge fields such as {{contact.first_name}} pass through untouched.' },
+      subjectLine: { type: 'string', description: 'Default subject line for emails built from this template.' },
+      previewText: { type: 'string', description: 'Inbox preview snippet shown after the subject line.' },
+      fromName: { type: 'string' },
+      fromEmail: { type: 'string' },
+      parentFolderId: { type: 'string', description: 'Template folder id to file this template under.' },
+      plainText: { type: 'boolean', description: 'Store as a plain-text template (editorType text) rather than HTML.' },
+    },
+    required: ['name'],
+    writePlan: [
+      { label: 'Create email template', method: 'POST', version: 'v3', path: (_args, locationId) => `/emails/locations/${enc(locationId)}/templates`, body: (args) => emailTemplateBody(args) },
     ],
   },
 ];
@@ -1406,6 +1431,73 @@ function compact(args: JsonRecord): JsonRecord {
 
 function pick(args: JsonRecord, keys: string[]): JsonRecord {
   return compact(Object.fromEntries(keys.map((key) => [key, args[key]])));
+}
+
+// GHL's custom-field dataType vocabulary is idiosyncratic (MONETORY, not
+// MONETARY; SINGLE_OPTIONS, not DROPDOWN). Map the everyday spellings onto it
+// so a reasonable guess becomes the right field instead of a 422.
+const FIELD_DATA_TYPE_ALIASES: Record<string, string> = {
+  DROPDOWN: 'SINGLE_OPTIONS', SELECT: 'SINGLE_OPTIONS', SINGLE_SELECT: 'SINGLE_OPTIONS', SINGLE_OPTION: 'SINGLE_OPTIONS', PICKLIST: 'SINGLE_OPTIONS',
+  MULTI_SELECT: 'MULTIPLE_OPTIONS', MULTISELECT: 'MULTIPLE_OPTIONS', MULTIPLE_OPTION: 'MULTIPLE_OPTIONS', MULTIPLE_CHOICE: 'MULTIPLE_OPTIONS',
+  TEXTAREA: 'LARGE_TEXT', LONG_TEXT: 'LARGE_TEXT', PARAGRAPH: 'LARGE_TEXT', MULTILINE: 'LARGE_TEXT',
+  NUMBER: 'NUMERICAL', INTEGER: 'NUMERICAL', INT: 'NUMERICAL', DECIMAL: 'FLOAT', DOUBLE: 'FLOAT',
+  MONETARY: 'MONETORY', CURRENCY: 'MONETORY', MONEY: 'MONETORY',
+  BOOLEAN: 'CHECKBOX', BOOL: 'CHECKBOX',
+  DATETIME: 'DATE_TIME', TIMESTAMP: 'DATE_TIME',
+  LINK: 'URL', WEBSITE: 'URL',
+  FILE: 'FILE_UPLOAD', UPLOAD: 'FILE_UPLOAD', ATTACHMENT: 'FILE_UPLOAD',
+};
+
+function normalizeFieldDataType(value: unknown): string | undefined {
+  const raw = stringArg(value);
+  if (!raw) return undefined;
+  const key = raw.toUpperCase().replace(/[\s-]+/g, '_');
+  return FIELD_DATA_TYPE_ALIASES[key] || key;
+}
+
+// Option lists arrive as plain strings, or as the {key,label} objects the v2
+// custom-object API uses. The location customFields API stores picklistOptions
+// as strings, so reduce objects to their label rather than rejecting the call.
+function normalizeFieldOptions(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const options = value
+    .map((item) => {
+      if (typeof item === 'string') return item.trim();
+      if (item && typeof item === 'object') {
+        const record = item as JsonRecord;
+        return stringArg(record.label) || stringArg(record.name) || stringArg(record.value) || stringArg(record.key) || '';
+      }
+      return item === undefined || item === null ? '' : String(item);
+    })
+    .filter(Boolean);
+  return options.length ? options : undefined;
+}
+
+function emailTemplateBody(args: JsonRecord): JsonRecord {
+  return compact({
+    name: args.name,
+    editorType: args.plainText === true ? 'text' : 'html',
+    editorContent: args.html,
+    subjectLine: args.subjectLine,
+    previewText: args.previewText,
+    fromName: args.fromName,
+    fromEmail: args.fromEmail,
+    parentFolderId: args.parentFolderId,
+  });
+}
+
+function customFieldBody(args: JsonRecord, isCreate: boolean): JsonRecord {
+  const dataType = normalizeFieldDataType(args.dataType);
+  return compact({
+    name: args.name,
+    dataType: isCreate ? (dataType || 'TEXT') : dataType,
+    options: normalizeFieldOptions(args.options),
+    placeholder: args.placeholder,
+    model: args.model,
+    parentId: args.parentId,
+    position: args.position,
+    ...(args.field as JsonRecord || {}),
+  });
 }
 
 function contactPayload(args: JsonRecord, locationId: string): JsonRecord {

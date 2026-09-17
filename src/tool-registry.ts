@@ -176,6 +176,19 @@ const parseJsonish = (v: unknown): unknown => {
   try { return JSON.parse(t); } catch { return v; }
 };
 const lenientRecord = z.preprocess(parseJsonish, z.record(z.string(), z.any()));
+// Option/choice lists are routinely handed over as {key,label} objects where a
+// schema asks for plain strings (that is the shape the v2 custom-object API
+// uses). Reduce such an object to its label instead of failing the whole call.
+const lenientString = z.preprocess((v) => {
+  if (v && typeof v === 'object' && !Array.isArray(v)) {
+    const record = v as Record<string, unknown>;
+    for (const key of ['label', 'name', 'value', 'key']) {
+      const candidate = record[key];
+      if (typeof candidate === 'string' && candidate.trim()) return candidate;
+    }
+  }
+  return v;
+}, z.string());
 
 function jsonSchemaPropToZod(prop: any): ZodType {
   let type: ZodType;
@@ -184,7 +197,7 @@ function jsonSchemaPropToZod(prop: any): ZodType {
     type = values.length > 1 ? z.enum(values) : z.literal(values[0]);
   } else {
     switch (prop?.type) {
-      case 'string': type = z.string(); break;
+      case 'string': type = lenientString; break;
       case 'number': type = lenientNumber; break;
       case 'integer': type = lenientNumber; break;
       case 'boolean': type = lenientBoolean; break;

@@ -428,14 +428,39 @@ const WORKSPACE_SPECS: WorkspaceToolSpec[] = [
   {
     name: 'crm_appointment_workspace',
     title: 'Open Appointment Workspace Data',
-    description: 'Gather calendars, availability, and appointment context before booking or rescheduling.',
+    description: 'Gather calendars, booked appointments and availability. Lists existing appointments in the date window (default: the next 30 days) so they can be reviewed, chased or marked showed/no-show, and returns free slots when a calendarId is given.',
     app: 'appointment-desk',
     access: 'read',
-    inputProperties: { calendarId: { type: 'string' }, startDate: { type: 'string' }, endDate: { type: 'string' } },
+    inputProperties: {
+      calendarId: { type: 'string', description: 'Limit appointments and free slots to one calendar.' },
+      contactId: { type: 'string', description: 'Also list this contact\'s appointments.' },
+      userId: { type: 'string', description: 'Limit appointments to those assigned to one user.' },
+      startDate: { type: 'string', description: 'Window start (YYYY-MM-DD or epoch ms). Defaults to now.' },
+      endDate: { type: 'string', description: 'Window end (YYYY-MM-DD or epoch ms). Defaults to 30 days after the start.' },
+    },
     readPlan: [
       { label: 'Calendars', tool: 'get_calendars', method: 'GET', path: (_args, locationId) => `/calendars/?locationId=${enc(locationId)}` },
+      { label: 'Appointments', tool: 'get_calendar_events', method: 'GET', path: (args, locationId) => `/calendars/events?${eventWindowQuery(args, locationId)}` },
+      { label: 'Contact appointments', tool: 'get_contact_appointments', method: 'GET', path: (args) => stringArg(args.contactId) ? `/contacts/${enc(stringArg(args.contactId)!)}/appointments` : undefined },
       { label: 'Free slots', tool: 'get_free_slots', method: 'GET', path: (args) => stringArg(args.calendarId) ? `/calendars/${stringArg(args.calendarId)}/free-slots?startDate=${enc(stringArg(args.startDate) || today())}` : undefined },
     ],
+  },
+  {
+    name: 'crm_prepare_appointment_status',
+    title: 'Prepare Appointment Status Change',
+    description: 'Stage an appointment status change — confirmed, showed, noshow, cancelled, invalid or new — for one appointment or a batch of them, and optionally reassign the owner. Notification to the contact is OFF unless toNotify is set, so back-office corrections stay silent. Re-call with executeConfirmed: true after the user approves.',
+    app: 'appointment-desk',
+    access: 'write',
+    inputProperties: {
+      appointmentId: { type: 'string', description: 'Appointment (event) id to update.' },
+      appointmentIds: { type: 'array', items: { type: 'string' }, description: 'Several appointment ids to set to the same status in one pass.' },
+      status: { type: 'string', enum: ['new', 'confirmed', 'showed', 'noshow', 'cancelled', 'invalid'], description: 'New appointment status.' },
+      assignedUserId: { type: 'string', description: 'Reassign the appointment to this user.' },
+      title: { type: 'string', description: 'Rename the appointment.' },
+      address: { type: 'string', description: 'Change the meeting location.' },
+      toNotify: { type: 'boolean', description: 'Notify the contact about the change. Defaults to false.' },
+    },
+    writePlan: [],
   },
   {
     name: 'crm_prepare_appointment_booking',
@@ -1102,6 +1127,10 @@ export class AgentWorkspaceTools {
     // a 404 fallback rather than betting on one.
     if (name === 'crm_prepare_email_template') {
       return this.stageOrExecute(spec, emailTemplateActions(args, locationId), locationId, confirmed);
+    }
+
+    if (name === 'crm_prepare_appointment_status') {
+      return this.stageOrExecute(spec, appointmentStatusActions(args), locationId, confirmed);
     }
 
     // Endpoint-level staged writes (crm-builder tools).
@@ -1858,6 +1887,54 @@ function altQuery(locationId: string, args: JsonRecord = {}, filterable = false)
     if (contactId) parts.push(`contactId=${enc(contactId)}`);
   }
   return parts.join('&');
+}
+
+// /calendars/events needs an explicit window; default to the next 30 days so
+// the workspace answers "what is on the books" without the caller doing date math.
+function eventWindowQuery(args: JsonRecord, locationId: string): string {
+  const parse = (value: unknown): number | undefined => {
+    const raw = stringArg(value) ?? (numberArg(value) !== undefined ? String(numberArg(value)) : undefined);
+    if (!raw) return undefined;
+    const asNumber = Number(raw);
+    if (Number.isFinite(asNumber) && raw.trim().length > 8 && !raw.includes('-')) return asNumber;
+    const parsed = Date.parse(raw);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  };
+  const start = parse(args.startDate) ?? Date.now();
+  const end = parse(args.endDate) ?? start + 30 * 24 * 60 * 60 * 1000;
+  const parts = [`locationId=${enc(locationId)}`, `startTime=${start}`, `endTime=${end}`];
+  const calendarId = stringArg(args.calendarId);
+  if (calendarId) parts.push(`calendarId=${enc(calendarId)}`);
+  const userId = stringArg(args.userId);
+  if (userId) parts.push(`userId=${enc(userId)}`);
+  return parts.join('&');
+}
+
+function appointmentStatusActions(args: JsonRecord): StagedWrite[] {
+  const ids = [
+    ...(Array.isArray(args.appointmentIds) ? (args.appointmentIds as unknown[]).map(String) : []),
+    ...(stringArg(args.appointmentId) ? [stringArg(args.appointmentId)!] : []),
+  ].map((id) => id.trim()).filter(Boolean);
+  const unique = [...new Set(ids)];
+  const status = stringArg(args.status);
+  const body = compact({
+    appointmentStatus: status,
+    assignedUserId: args.assignedUserId,
+    title: args.title,
+    address: args.address,
+    toNotify: args.toNotify === true,
+  });
+  if (!unique.length || Object.keys(body).length <= 1) return [];
+  // Cancelling or invalidating takes the slot off the books, so flag it for the
+  // confirmation step the way other destructive actions are flagged.
+  const destructive = status === 'cancelled' || status === 'invalid';
+  return unique.map((id) => ({
+    label: status ? `Set appointment ${id} to ${status}` : `Update appointment ${id}`,
+    method: 'PUT' as const,
+    path: `/calendars/events/appointments/${enc(id)}`,
+    body,
+    destructive,
+  }));
 }
 
 function isNotFound(error: unknown): boolean {

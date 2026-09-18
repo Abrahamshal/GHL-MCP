@@ -2,13 +2,19 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
 const docsRepoUrl = 'https://github.com/GoHighLevel/highlevel-api-docs.git';
-const defaultDocsDir = join(repoRoot, 'tmp', 'highlevel-api-docs');
+// The docs checkout is a git repo in its own right. Cloning it inside the
+// workspace makes editors detect a second repository alongside this one, which
+// breaks source-control actions that act on "the" repo, so it lives in a cache
+// directory outside the tree. Override with GHL_DOCS_CACHE.
+const docsCacheRoot = process.env.GHL_DOCS_CACHE || join(homedir(), '.cache', 'ghl-mcp');
+const defaultDocsDir = join(docsCacheRoot, 'highlevel-api-docs');
 const defaultReportPath = join(repoRoot, 'docs', 'GHL-API-COVERAGE-REPORT.md');
 const defaultJsonPath = join(repoRoot, 'docs', 'ghl-api-coverage.json');
 const defaultLockPath = join(repoRoot, 'docs', 'api-sources.lock.json');

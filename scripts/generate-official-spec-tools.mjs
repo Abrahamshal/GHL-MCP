@@ -2,11 +2,15 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
+// Kept in step with scan-ghl-api-coverage.mjs: the docs checkout lives outside
+// the workspace so editors do not see a second git repository here.
+const docsCacheRoot = process.env.GHL_DOCS_CACHE || join(homedir(), '.cache', 'ghl-mcp');
 const coveragePath = join(repoRoot, 'docs', 'ghl-api-coverage.json');
 const outputPath = join(repoRoot, 'src', 'tools', 'official-spec-tools.ts');
 const dataPath = join(repoRoot, 'src', 'tools', 'official-spec-endpoints.json');
@@ -296,7 +300,7 @@ function getPathParams(path) {
 
 function getOperation(endpoint) {
   if (!endpoint.sourceFile || !endpoint.sourceFile.endsWith('.json')) return undefined;
-  const specPath = join(repoRoot, 'tmp', 'highlevel-api-docs', endpoint.sourceFile);
+  const specPath = join(docsCacheRoot, 'highlevel-api-docs', endpoint.sourceFile);
   const spec = JSON.parse(readFileSync(specPath, 'utf8'));
   return spec.paths?.[endpoint.path]?.[endpoint.method.toLowerCase()];
 }

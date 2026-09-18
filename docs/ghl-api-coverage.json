@@ -11565,6 +11565,22 @@
         "caller": "makeRequest"
       },
       {
+        "key": "GET /contacts/{}",
+        "method": "GET",
+        "path": "/contacts/{param}",
+        "normalizedPath": "/contacts/{}",
+        "sourceFile": "src/tools/agent-workspace-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
+        "key": "GET /locations/{}",
+        "method": "GET",
+        "path": "/locations/{param}",
+        "normalizedPath": "/locations/{}",
+        "sourceFile": "src/tools/agent-workspace-tools.ts",
+        "caller": "makeRequest"
+      },
+      {
         "key": "GET /locations/{}/customFields",
         "method": "GET",
         "path": "/locations/{param}/customFields",

@@ -5,11 +5,11 @@ Generated from official GHL docs commit: 0af86a4
 ## Source Snapshot
 
 - Official docs repo: https://github.com/GoHighLevel/highlevel-api-docs.git
-- Docs checkout: `tmp/highlevel-api-docs`
+- Docs checkout: `../../.cache/ghl-mcp/highlevel-api-docs`
 - Docs commit: `0af86a4cbd48c66a4071c7e509d1079f9f10ed17`
 - Docs tag/description: `0af86a4`
 - Official endpoint references parsed: 590
-- Local endpoint references parsed: 853
+- Local endpoint references parsed: 855
 - Local TypeScript files scanned: 62
 
 ## Coverage Summary
